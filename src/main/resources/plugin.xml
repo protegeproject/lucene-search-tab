@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <plugin>
     <extension id="SearchTabManager" point="org.protege.editor.owl.searchmanager">
         <name value="Lucene search" />
@@ -41,7 +40,7 @@
                name="Build Index Menu"
                point="org.protege.editor.core.application.EditorKitMenuAction">
         <name value="Build index"/>
-        <path value="org.protege.editor.search.Lucene/SlotA-G"/>
+        <path value="lucene-search-tab.Lucene/SlotA-G"/>
         <editorKitId value="OWLEditorKit"/>
         <class value="edu.stanford.protege.search.lucene.tab.ui.IndexAction"/>
     </extension>
@@ -50,7 +49,7 @@
                name="Open Settings Menu"
                point="org.protege.editor.core.application.EditorKitMenuAction">
         <name value="Settings"/>
-        <path value="org.protege.editor.search.Lucene/SlotB-G"/>
+        <path value="lucene-search-tab.Lucene/SlotB-G"/>
         <editorKitId value="OWLEditorKit"/>
         <class value="edu.stanford.protege.search.lucene.tab.ui.OpenSettingsAction"/>
     </extension>
