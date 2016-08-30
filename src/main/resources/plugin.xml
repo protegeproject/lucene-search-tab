@@ -3,15 +3,7 @@
 <plugin>
     <extension id="SearchTabManager" point="org.protege.editor.owl.searchmanager">
         <name value="Lucene search" />
-        <class value="org.protege.editor.search.nci.SearchTabManager" />
-    </extension>
-
-    <!-- Preferences -->
-
-    <extension id="ui.preferences.update"
-               point="org.protege.editor.core.application.preferencespanel">
-        <label value="Lucene Search"/>
-        <class value="org.protege.editor.search.lucene.SearchPreferencesPanel"/>
+        <class value="edu.stanford.protege.search.lucene.tab.engine.SearchTabManager" />
     </extension>
 
     <!-- Tabs -->
@@ -30,7 +22,7 @@
     <extension id="LuceneQueryView"
                point="org.protege.editor.core.application.ViewComponent">
         <label value="Lucene Query"/>
-        <class value="org.protege.editor.search.ui.LuceneQueryView"/>
+        <class value="edu.stanford.protege.search.lucene.tab.ui.LuceneQueryView"/>
         <headerColor value="@org.protege.ontologycolor"/>
         <category value="Query"/>
     </extension>
@@ -51,7 +43,7 @@
         <name value="Build index"/>
         <path value="org.protege.editor.search.Lucene/SlotA-G"/>
         <editorKitId value="OWLEditorKit"/>
-        <class value="org.protege.editor.search.ui.IndexAction"/>
+        <class value="edu.stanford.protege.search.lucene.tab.ui.IndexAction"/>
     </extension>
 
     <extension id="OpenSettings"
@@ -60,6 +52,6 @@
         <name value="Settings"/>
         <path value="org.protege.editor.search.Lucene/SlotB-G"/>
         <editorKitId value="OWLEditorKit"/>
-        <class value="org.protege.editor.search.ui.OpenSettingsAction"/>
+        <class value="edu.stanford.protege.search.lucene.tab.ui.OpenSettingsAction"/>
     </extension>
 </plugin>

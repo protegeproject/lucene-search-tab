@@ -3,7 +3,7 @@
     <VSNode splits="1.0">
         <CNode>
             <Component label="Lucene Query">
-                <Property id="pluginId" value="org.protege.editor.search.LuceneQueryView"/>
+                <Property id="pluginId" value="lucene-search-tab.LuceneQueryView"/>
             </Component>
         </CNode>
     </VSNode>
