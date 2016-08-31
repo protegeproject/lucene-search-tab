@@ -188,7 +188,7 @@ public class SearchQueryTest {
          */
         PropertyValueAbsent query = getQueryFactory().createPropertyValueAbsentFilter(KoalaOntology.rdfsLabel);
         Set<OWLEntity> results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(29));
+        assertThat(results, hasSize(30));
         assertThat(results, containsInAnyOrder(
                 KoalaOntology.gender,
                 KoalaOntology.marsupials,
@@ -217,6 +217,7 @@ public class SearchQueryTest {
                 KoalaOntology.owlVersionInfo,
                 KoalaOntology.rdfsSeeAlso,
                 KoalaOntology.rdfsLabel,
+                KoalaOntology.rdfsComment,
                 KoalaOntology.rdfPlainLiteral,
                 KoalaOntology.xsdBoolean));
         
@@ -225,7 +226,7 @@ public class SearchQueryTest {
          */
         query = getQueryFactory().createPropertyValueAbsentFilter(KoalaOntology.hasHabitat);
         results = getQueryEvaluationResults(query);
-        assertThat(results, hasSize(37));
+        assertThat(results, hasSize(38));
         assertThat(results, containsInAnyOrder(KoalaOntology.allEntities.toArray()));
         
         /*
@@ -233,7 +234,7 @@ public class SearchQueryTest {
          */
         query = getQueryFactory().createPropertyValueAbsentFilter(KoalaOntology.hasChildren);
         results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(37));
+        assertThat(results, hasSize(38));
         assertThat(results, containsInAnyOrder(KoalaOntology.allEntities.toArray()));
         
         /*
@@ -241,7 +242,7 @@ public class SearchQueryTest {
          */
         query = getQueryFactory().createPropertyValueAbsentFilter(KoalaOntology.hasDegree);
         results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(37));
+        assertThat(results, hasSize(38));
         assertThat(results, containsInAnyOrder(KoalaOntology.allEntities.toArray()));
         
         /*
@@ -249,7 +250,7 @@ public class SearchQueryTest {
          */
         query = getQueryFactory().createPropertyValueAbsentFilter(KoalaOntology.hasGender);
         results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(37));
+        assertThat(results, hasSize(38));
         assertThat(results, containsInAnyOrder(KoalaOntology.allEntities.toArray()));
         
         /*
@@ -257,7 +258,7 @@ public class SearchQueryTest {
          */
         query = getQueryFactory().createPropertyValueAbsentFilter(KoalaOntology.isHardWorking);
         results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(37));
+        assertThat(results, hasSize(38));
         assertThat(results, containsInAnyOrder(KoalaOntology.allEntities.toArray()));
     }
 
@@ -462,7 +463,7 @@ public class SearchQueryTest {
         builder.add(getQueryFactory().createContainsFilter(KoalaOntology.rdfsLabel, "male"));
         NegatedQuery query = builder.build(true);
         Set<OWLEntity> results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(35));
+        assertThat(results, hasSize(36));
         assertThat(results, containsInAnyOrder(
                 KoalaOntology.gender,
                 KoalaOntology.marsupials,
@@ -491,6 +492,7 @@ public class SearchQueryTest {
                 KoalaOntology.owlVersionInfo,
                 KoalaOntology.rdfsSeeAlso,
                 KoalaOntology.rdfsLabel,
+                KoalaOntology.rdfsComment,
                 KoalaOntology.rdfPlainLiteral,
                 KoalaOntology.xsdBoolean,
                 KoalaOntology._male,
@@ -662,6 +664,43 @@ public class SearchQueryTest {
                 KoalaOntology.animal,
                 KoalaOntology.koala,
                 KoalaOntology.student));
+    }
+
+    @Test
+    public void testSpecialCharactersSearch() throws IOException, QueryEvaluationException {
+        /*
+         * Example 1: Having dash '-'
+         */
+        KeywordQuery query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "-");
+        Set<OWLEntity> results = getQueryEvaluationResults(query);;
+        assertThat(results, hasSize(2));
+        assertThat(results, containsInAnyOrder(
+                KoalaOntology.quokka,
+                KoalaOntology.rainForest));
+        
+        /*
+         * Example 2: Having parenthesis '('
+         */
+        query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "(");
+        results = getQueryEvaluationResults(query);;
+        assertThat(results, hasSize(1));
+        assertThat(results, containsInAnyOrder(KoalaOntology.quokka));
+        
+        /*
+         * Example 3: Having percentage '%'
+         */
+        query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "%");
+        results = getQueryEvaluationResults(query);;
+        assertThat(results, hasSize(1));
+        assertThat(results, containsInAnyOrder(KoalaOntology.tasmanianDevil));
+        
+        /*
+         * Example 4: As a sub-text
+         */
+        query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "(5.5-11.0");
+        results = getQueryEvaluationResults(query);;
+        assertThat(results, hasSize(1));
+        assertThat(results, containsInAnyOrder(KoalaOntology.quokka));
     }
 
     private BasicQuery.Factory getQueryFactory() throws IOException {

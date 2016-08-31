@@ -1,14 +1,32 @@
 package edu.stanford.protege.search.lucene.tab;
 
-import org.semanticweb.owlapi.io.StringDocumentSource;
-import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.util.CollectionFactory;
-import org.semanticweb.owlapi.vocab.Namespaces;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.AnnotationAssertion;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.AnnotationProperty;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.Class;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.DataProperty;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.Datatype;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.IRI;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.NamedIndividual;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.ObjectProperty;
+import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.PlainLiteral;
 
 import java.util.List;
 
-import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.*;
-import static org.semanticweb.owlapi.apibinding.OWLFunctionalSyntaxFactory.Class;
+import org.semanticweb.owlapi.io.StringDocumentSource;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLDataProperty;
+import org.semanticweb.owlapi.model.OWLDatatype;
+import org.semanticweb.owlapi.model.OWLIndividual;
+import org.semanticweb.owlapi.model.OWLObject;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.util.CollectionFactory;
+import org.semanticweb.owlapi.vocab.Namespaces;
 
 public final class KoalaOntology {
 
@@ -25,12 +43,12 @@ public final class KoalaOntology {
         + "  <owl:Class rdf:ID=\"Koala\" rdfs:label=\"Koala\"><rdfs:subClassOf><owl:Restriction><owl:hasValue rdf:datatype=\"http://www.w3.org/2001/XMLSchema#boolean\">false</owl:hasValue><owl:onProperty><owl:FunctionalProperty rdf:about=\"#isHardWorking\"/></owl:onProperty></owl:Restriction></rdfs:subClassOf><rdfs:subClassOf><owl:Restriction><owl:someValuesFrom><owl:Class rdf:about=\"#DryEucalyptForest\"/></owl:someValuesFrom><owl:onProperty><owl:ObjectProperty rdf:about=\"#hasHabitat\"/></owl:onProperty></owl:Restriction></rdfs:subClassOf><rdfs:subClassOf rdf:resource=\"#Marsupials\"/></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"Animal\"><rdfs:seeAlso>Male</rdfs:seeAlso><rdfs:subClassOf><owl:Restriction><owl:onProperty><owl:ObjectProperty rdf:about=\"#hasHabitat\"/></owl:onProperty><owl:minCardinality rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">1</owl:minCardinality></owl:Restriction></rdfs:subClassOf><rdfs:subClassOf><owl:Restriction><owl:cardinality rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">1</owl:cardinality><owl:onProperty><owl:FunctionalProperty rdf:about=\"#hasGender\"/></owl:onProperty></owl:Restriction></rdfs:subClassOf><owl:versionInfo>1.1</owl:versionInfo></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"Forest\"><rdfs:subClassOf rdf:resource=\"#Habitat\"/></owl:Class>\n"
-        + "  <owl:Class rdf:ID=\"Rainforest\" rdfs:label=\"Rain Forest\"><rdfs:subClassOf rdf:resource=\"#Forest\"/></owl:Class>\n"
+        + "  <owl:Class rdf:ID=\"Rainforest\" rdfs:label=\"Rain Forest\" rdfs:comment=\"The emergent layer contains a small number of very large trees called emergents, which grow above the general canopy, reaching heights of 45-55 m, although on occasion a few species will grow to 70-80 m tall\"><rdfs:subClassOf rdf:resource=\"#Forest\"/></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"GraduateStudent\"><rdfs:subClassOf><owl:Restriction><owl:onProperty><owl:ObjectProperty rdf:about=\"#hasDegree\"/></owl:onProperty><owl:someValuesFrom><owl:Class><owl:oneOf rdf:parseType=\"Collection\"><Degree rdf:ID=\"BA\"/><Degree rdf:ID=\"BS\"/></owl:oneOf></owl:Class></owl:someValuesFrom></owl:Restriction></rdfs:subClassOf><rdfs:subClassOf rdf:resource=\"#Student\"/></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"Parent\"><owl:equivalentClass><owl:Class><owl:intersectionOf rdf:parseType=\"Collection\"><owl:Class rdf:about=\"#Animal\"/><owl:Restriction><owl:onProperty><owl:ObjectProperty rdf:about=\"#hasChildren\"/></owl:onProperty><owl:minCardinality rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">1</owl:minCardinality></owl:Restriction></owl:intersectionOf></owl:Class></owl:equivalentClass><rdfs:subClassOf rdf:resource=\"#Animal\"/></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"DryEucalyptForest\" rdfs:label=\"Dry Eucalypt Forest\"><rdfs:subClassOf rdf:resource=\"#Forest\"/></owl:Class>\n"
-        + "  <owl:Class rdf:ID=\"Quokka\" rdfs:label=\"Quokka\"><rdfs:subClassOf><owl:Restriction><owl:hasValue rdf:datatype=\"http://www.w3.org/2001/XMLSchema#boolean\">true</owl:hasValue><owl:onProperty><owl:FunctionalProperty rdf:about=\"#isHardWorking\"/></owl:onProperty></owl:Restriction></rdfs:subClassOf><rdfs:subClassOf rdf:resource=\"#Marsupials\"/></owl:Class>\n"
-        + "  <owl:Class rdf:ID=\"TasmanianDevil\" rdfs:label=\"Tasmanian Devil\"><rdfs:subClassOf rdf:resource=\"#Marsupials\"/></owl:Class>\n"
+        + "  <owl:Class rdf:ID=\"Quokka\" rdfs:label=\"Quokka\" rdfs:comment=\"The quokka weighs 2.5-5 kilograms (5.5-11.0 lb) and is 40-54 centimetres (16-21 in) long with a 25-30 centimetres (9.8-11.8 in) long tail\"><rdfs:subClassOf><owl:Restriction><owl:hasValue rdf:datatype=\"http://www.w3.org/2001/XMLSchema#boolean\">true</owl:hasValue><owl:onProperty><owl:FunctionalProperty rdf:about=\"#isHardWorking\"/></owl:onProperty></owl:Restriction></rdfs:subClassOf><rdfs:subClassOf rdf:resource=\"#Marsupials\"/></owl:Class>\n"
+        + "  <owl:Class rdf:ID=\"TasmanianDevil\" rdfs:label=\"Tasmanian Devil\" rdfs:comment=\"On average, devils eat about 15% of their body weight each day, although they can eat up to 40% of their body weight in 30 minutes if the opportunity arises.\"><rdfs:subClassOf rdf:resource=\"#Marsupials\"/></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"MaleStudentWith3Daughters\"><owl:equivalentClass><owl:Class><owl:intersectionOf rdf:parseType=\"Collection\"><owl:Class rdf:about=\"#Student\"/><owl:Restriction><owl:onProperty><owl:FunctionalProperty rdf:about=\"#hasGender\"/></owl:onProperty><owl:hasValue><Gender rdf:ID=\"male\"/></owl:hasValue></owl:Restriction><owl:Restriction><owl:onProperty><owl:ObjectProperty rdf:about=\"#hasChildren\"/></owl:onProperty><owl:cardinality rdf:datatype=\"http://www.w3.org/2001/XMLSchema#int\">3</owl:cardinality></owl:Restriction><owl:Restriction><owl:allValuesFrom rdf:resource=\"#Female\"/><owl:onProperty><owl:ObjectProperty rdf:about=\"#hasChildren\"/></owl:onProperty></owl:Restriction></owl:intersectionOf></owl:Class></owl:equivalentClass></owl:Class>\n"
         + "  <owl:Class rdf:ID=\"Degree\"/>\n  <owl:Class rdf:ID=\"Gender\"/>\n"
         + "  <owl:Class rdf:ID=\"Male\" rdfs:label=\"Male\"><owl:equivalentClass><owl:Restriction><owl:hasValue rdf:resource=\"#male\"/><owl:onProperty><owl:FunctionalProperty rdf:about=\"#hasGender\"/></owl:onProperty></owl:Restriction></owl:equivalentClass></owl:Class>\n"
@@ -116,6 +134,7 @@ public final class KoalaOntology {
     public static final OWLAnnotationProperty owlVersionInfo = AnnotationProperty(IRI(Namespaces.OWL + "versionInfo"));
     public static final OWLAnnotationProperty rdfsSeeAlso = AnnotationProperty(IRI(Namespaces.RDFS + "seeAlso"));
     public static final OWLAnnotationProperty rdfsLabel = AnnotationProperty(IRI(Namespaces.RDFS + "label"));
+    public static final OWLAnnotationProperty rdfsComment = AnnotationProperty(IRI(Namespaces.RDFS + "comment"));
     public static final OWLDatatype rdfPlainLiteral = Datatype(IRI(Namespaces.RDF + "PlainLiteral"));
     public static final OWLDatatype xsdBoolean = Datatype(IRI(Namespaces.XSD + "boolean"));
 
@@ -132,7 +151,7 @@ public final class KoalaOntology {
         gender, female, marsupials, student, koalaWithPhd, university, koala, animal, habitat, forest, rainForest,
         dryEucalyptForest, parent, graduateStudent, quokka, tasmanianDevil, maleStudentWith3Daughters, degree, male,
         person, hasHabitat, hasDegree, hasChildren, hasGender, isHardWorking, owlThing, owlVersionInfo, rdfsSeeAlso,
-        rdfsLabel, rdfPlainLiteral, xsdBoolean, _male, _female, _ba, _bs, _ma, _phd
+        rdfsLabel, rdfsComment, rdfPlainLiteral, xsdBoolean, _male, _female, _ba, _bs, _ma, _phd
     );
 
     /**
