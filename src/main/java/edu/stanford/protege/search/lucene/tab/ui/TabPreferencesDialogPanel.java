@@ -47,8 +47,8 @@ public class TabPreferencesDialogPanel extends JPanel implements VerifiedInputEd
     private void initUi() {
         setLayout(new GridBagLayout());
 
-        propertyLbl = new JLabel("Default OWL Property");
-        queryTypeLbl = new JLabel("Default Query Type");
+        propertyLbl = new JLabel("Default OWL property");
+        queryTypeLbl = new JLabel("Default query type");
         maxResultsLbl = new JLabel("Maximum results per page");
 
         propertyComboBox = new OwlEntityComboBox(editorKit);
