@@ -9,7 +9,7 @@
 
     <extension id="LuceneQueryTab"
                point="org.protege.editor.core.application.WorkspaceTab">
-        <label value="Lucene Query"/>
+        <label value="Lucene Search Tab"/>
         <class value="org.protege.editor.owl.ui.OWLWorkspaceViewsTab"/>
         <index value="X"/>
         <editorKitId value="OWLEditorKit"/>
@@ -23,7 +23,7 @@
         <label value="Lucene Query"/>
         <class value="edu.stanford.protege.search.lucene.tab.ui.LuceneQueryView"/>
         <headerColor value="@org.protege.ontologycolor"/>
-        <category value="Query"/>
+        <category value="Lucene Search Tab"/>
     </extension>
 
     <!-- Menus -->
