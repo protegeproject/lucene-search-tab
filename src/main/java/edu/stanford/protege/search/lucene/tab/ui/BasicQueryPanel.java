@@ -56,7 +56,7 @@ public class BasicQueryPanel extends QueryPanel {
         comboBoxChangeHandler = new OwlEntityComboBoxChangeHandler(propertyComboBox);
 
         queryTypeComboBox = new JComboBox<>();
-        queryTypeComboBox.setPrototypeDisplayValue(QueryType.PROPERTY_RESTRICTION_PRESENT);
+        queryTypeComboBox.setPrototypeDisplayValue(QueryType.IS);
         queryTypeComboBox.addActionListener(queryTypeComboBoxListener);
 
         valueTextField = new JTextField();
@@ -71,9 +71,9 @@ public class BasicQueryPanel extends QueryPanel {
         add(queryTypeLbl, new GridBagConstraints(1, rowIndex, 1, 1, 0.0, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.NONE, new Insets(0, 9, 2, 5), 0, 0));
         add(valueLbl, new GridBagConstraints(2, rowIndex, 2, 1, 0.0, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, insets, 0, 0));
         rowIndex++;
-        add(propertyComboBox, new GridBagConstraints(0, rowIndex, 1, 1, 0.0, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.NONE, insets, 0, 0));
-        add(queryTypeComboBox, new GridBagConstraints(1, rowIndex, 1, 1, 0.0, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.NONE, insets, 0, 0));
-        add(value, new GridBagConstraints(2, rowIndex, 2, 1, 1.0, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+        add(propertyComboBox, new GridBagConstraints(0, rowIndex, 1, 1, 0.4, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+        add(queryTypeComboBox, new GridBagConstraints(1, rowIndex, 1, 1, 0.4, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+        add(value, new GridBagConstraints(2, rowIndex, 2, 1, 0.2, 0.0, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 
         propertyComboBox.setSelectedItem(TabPreferences.getDefaultProperty(editorKit));
     }

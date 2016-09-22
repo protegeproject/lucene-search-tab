@@ -52,7 +52,7 @@ public class OwlEntityComboBox extends JComboBox<OWLEntity> {
         setMaximumRowCount(MAX_VISIBLE_ROWS);
         setRenderer(new OWLCellRenderer(editorKit));
         setEditor(new OwlEntityComboBoxEditor(editorKit));
-        setPreferredSize(new Dimension(200, 21));
+        setPreferredSize(new Dimension(0, 21));
         addPopupMenuListener(new OwlEntityComboBoxPopupMenuListener(editorKit));
         insertItemAt(null, 0);
         setSelectedIndex(0);
