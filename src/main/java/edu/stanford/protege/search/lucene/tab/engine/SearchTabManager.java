@@ -19,9 +19,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -265,15 +265,12 @@ public class SearchTabManager extends LuceneSearcher {
                 removeIndexDirectory();
                 LuceneSearchPreferences.removeIndexLocation(targetOntology);
             }
-            if (shouldStoreInDisk(targetOntology)) {
-                String indexLocation = LuceneSearchPreferences.findIndexLocation(targetOntology);
-                Directory directory = FSDirectory.open(Paths.get(indexLocation));
-                setIndexDirectory(directory);
+            if (LuceneSearchPreferences.useInMemoryIndexStoring()
+                    && isOntologySizeBelowMaximumStoringLimit(targetOntology)) {
+                loadIndexFromMemory();
             }
             else {
-                logger.info("Storing index into RAM memory");
-                Directory directory = new RAMDirectory();
-                setIndexDirectory(directory);
+                loadIndexFromLocalDisk(targetOntology);
             }
         }
         catch (IOException e) {
@@ -281,22 +278,41 @@ public class SearchTabManager extends LuceneSearcher {
         }
     }
 
-    private boolean shouldStoreInDisk(OWLOntology targetOntology) {
-        if (LuceneSearchPreferences.useInMemoryIndexStoring()) {
-            IRI documentIri = editorKit.getOWLModelManager().getOWLOntologyManager().getOntologyDocumentIRI(targetOntology);
-            try {
-                URL resourceUrl = documentIri.toURI().toURL();
-                URLConnection connection = resourceUrl.openConnection();
-                connection.connect();
-                int resourceSize = connection.getContentLength();
-                return resourceSize > LuceneSearchPreferences.getMaxSizeForInMemoryIndexStoring()*1024*1024; // in bytes
-            }
-            catch (IOException e) {
-                logger.error("Unable to open the ontology " + documentIri);
-                throw new RuntimeException(e);
-            }
+    private boolean isOntologySizeBelowMaximumStoringLimit(OWLOntology targetOntology) {
+        Optional<File> ontologyFile = getOntologyFile(targetOntology);
+        if (!ontologyFile.isPresent()) {
+            return false; // the ontology has no physical file
         }
-        return true;
+        boolean shouldStoreInDisk = false;
+        int fileSizeInMegaBytes = (int) (ontologyFile.get().length() / (1024 * 1024));
+        int maxFileSize = LuceneSearchPreferences.getMaxSizeForInMemoryIndexStoring(); // in MB
+        if (fileSizeInMegaBytes > maxFileSize) {
+            shouldStoreInDisk = true;
+        } else {
+            shouldStoreInDisk = false;
+        }
+        return shouldStoreInDisk;
+    }
+
+    private void loadIndexFromMemory() throws IOException {
+        logger.info("Storing index into RAM memory");
+        Directory directory = new RAMDirectory();
+        setIndexDirectory(directory);
+    }
+
+    private void loadIndexFromLocalDisk(OWLOntology targetOntology) throws IOException {
+        String indexLocation = LuceneSearchPreferences.findIndexLocation(targetOntology);
+        Directory directory = FSDirectory.open(Paths.get(indexLocation));
+        setIndexDirectory(directory);
+    }
+
+    private Optional<File> getOntologyFile(OWLOntology targetOntology) {
+        URI physicalLocationUri = editorKit.getOWLModelManager().getOntologyPhysicalURI(targetOntology);
+        File ontologyFile = null;
+        if (!physicalLocationUri.equals(URI.create(""))) {
+            ontologyFile = new File(physicalLocationUri);
+        }
+        return Optional.ofNullable(ontologyFile);
     }
 
     private Directory getIndexDirectory() {
