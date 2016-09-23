@@ -131,7 +131,7 @@ public class SearchTabManager extends LuceneSearcher {
         if (activeOntology != null && !activeOntology.isEmpty()) {
             logger.info("Initializing index");
             currentActiveOntology = activeOntology;
-            loadIndexDirectory(activeOntology, false); // false = reload index directory, if any
+            loadIndexDirectory(activeOntology);
             markIndexAsStale();
         }
     }
@@ -139,7 +139,8 @@ public class SearchTabManager extends LuceneSearcher {
     public void rebuildIndex(OWLOntology targetOntology) {
         if (targetOntology != null && !targetOntology.isEmpty()) {
             logger.info("Rebuilding index");
-            loadIndexDirectory(targetOntology, true); // true = recreate the index directory
+            removeIndexDirectory(targetOntology);
+            loadIndexDirectory(targetOntology);
             service.submit(this::buildingIndex);
         }
     }
@@ -259,12 +260,8 @@ public class SearchTabManager extends LuceneSearcher {
         stopSearch.set(true);
     }
 
-    private void loadIndexDirectory(@Nonnull OWLOntology targetOntology, boolean forceReset) {
+    private void loadIndexDirectory(@Nonnull OWLOntology targetOntology) {
         try {
-            if (forceReset) {
-                removeIndexDirectory();
-                LuceneSearchPreferences.removeIndexLocation(targetOntology);
-            }
             if (LuceneSearchPreferences.useInMemoryIndexStoring()
                     && isOntologySizeBelowMaximumStoringLimit(targetOntology)) {
                 loadIndexFromMemory();
@@ -276,6 +273,11 @@ public class SearchTabManager extends LuceneSearcher {
         catch (IOException e) {
             throw new RuntimeException("Failed to setup index directory", e);
         }
+    }
+
+    private void removeIndexDirectory(@Nonnull OWLOntology targetOntology) {
+        LuceneSearchPreferences.removeIndexLocation(targetOntology);
+        indexDelegator = null;
     }
 
     private boolean isOntologySizeBelowMaximumStoringLimit(OWLOntology targetOntology) {
@@ -317,10 +319,6 @@ public class SearchTabManager extends LuceneSearcher {
 
     private Directory getIndexDirectory() {
         return indexDirectory;
-    }
-
-    private void removeIndexDirectory() throws IOException {
-        setIndexDelegator(null);
     }
 
     private void setIndexDirectory(Directory indexDirectory) throws IOException {
