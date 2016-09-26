@@ -58,13 +58,15 @@ public class SearchTabManager extends LuceneSearcher {
 
     private Directory indexDirectory;
 
-    private OWLOntologyChangeListener ontologyChangeListener;
-
     private OWLModelManagerListener modelManagerListener;
 
     private OWLOntology currentActiveOntology;
 
     private final List<ProgressMonitor> progressMonitors = new ArrayList<>();
+
+    private OWLOntologyChangeListener updateIndexListener = changes -> {
+        updateIndex(changes);
+    };
 
     public SearchTabManager() {
         // NO-OP
@@ -78,11 +80,6 @@ public class SearchTabManager extends LuceneSearcher {
         categories.add(SearchCategory.IRI);
         categories.add(SearchCategory.ANNOTATION_VALUE);
         categories.add(SearchCategory.LOGICAL_AXIOM);
-        ontologyChangeListener = new OWLOntologyChangeListener() {
-            public void ontologiesChanged(List<? extends OWLOntologyChange> changes) throws OWLException {
-                updateIndex(changes);
-            }
-        };
         modelManagerListener = new OWLModelManagerListener() {
             public void handleChange(OWLModelManagerChangeEvent event) {
                 OWLOntology activeOntology = editorKit.getOWLModelManager().getActiveOntology();
@@ -109,8 +106,8 @@ public class SearchTabManager extends LuceneSearcher {
                 }
             }
         };
-        editorKit.getOWLModelManager().addOntologyChangeListener(ontologyChangeListener);
-        editorKit.getModelManager().addListener(modelManagerListener);
+        editorKit.getOWLModelManager().addListener(modelManagerListener);
+        editorKit.getOWLModelManager().addOntologyChangeListener(updateIndexListener);
         initialiseIndex();
     }
 
@@ -179,7 +176,7 @@ public class SearchTabManager extends LuceneSearcher {
 
     @Override
     public void dispose() {
-        editorKit.getOWLModelManager().removeOntologyChangeListener(ontologyChangeListener);
+        editorKit.getOWLModelManager().removeOntologyChangeListener(updateIndexListener);
         editorKit.getModelManager().removeListener(modelManagerListener);
         disposeIndexDelegator();
     }
