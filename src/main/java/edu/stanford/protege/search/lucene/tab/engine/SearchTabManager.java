@@ -58,14 +58,34 @@ public class SearchTabManager extends LuceneSearcher {
 
     private Directory indexDirectory;
 
-    private OWLModelManagerListener modelManagerListener;
-
     private OWLOntology currentActiveOntology;
 
     private final List<ProgressMonitor> progressMonitors = new ArrayList<>();
 
     private OWLOntologyChangeListener updateIndexListener = changes -> {
         updateIndex(changes);
+    };
+
+    private OWLModelManagerListener ontologyChangedListener = event -> {
+        OWLOntology activeOntology = editorKit.getOWLModelManager().getActiveOntology();
+        if (isCacheChangingEvent(event)) {
+            if (currentActiveOntology != null) {
+                /*
+                 * A workaround: Protege signals ACTIVE_ONTOLOGY_CHANGED twice when opening an ontology.
+                 * The loadOrCreateIndexDirectory() method shouldn't be called twice if the new active
+                 * ontology is the same as the current active ontology.
+                 */
+                 if (!currentActiveOntology.equals(activeOntology)) {
+                    loadIndex(activeOntology);
+                 }
+            }
+            else {
+                loadIndex(activeOntology);
+            }
+        }
+        else if (isCacheSavingEvent(event)) {
+           saveIndex(activeOntology);
+        }
     };
 
     public SearchTabManager() {
@@ -80,33 +100,7 @@ public class SearchTabManager extends LuceneSearcher {
         categories.add(SearchCategory.IRI);
         categories.add(SearchCategory.ANNOTATION_VALUE);
         categories.add(SearchCategory.LOGICAL_AXIOM);
-        modelManagerListener = new OWLModelManagerListener() {
-            public void handleChange(OWLModelManagerChangeEvent event) {
-                OWLOntology activeOntology = editorKit.getOWLModelManager().getActiveOntology();
-                if (isCacheChangingEvent(event)) {
-                    if (currentActiveOntology != null) {
-                        /*
-                         * A workaround: Protege signals ACTIVE_ONTOLOGY_CHANGED twice when opening an ontology.
-                         * The loadOrCreateIndexDirectory() method shouldn't be called twice if the new active
-                         * ontology is the same as the current active ontology.
-                         */
-                        if (!currentActiveOntology.equals(activeOntology)) {
-                            loadIndex(activeOntology);
-                        }
-                        else {
-                            // ignore if equals
-                        }
-                    }
-                    else {
-                        loadIndex(activeOntology);
-                    }
-                }
-                else if (isCacheSavingEvent(event)) {
-                    saveIndex(activeOntology);
-                }
-            }
-        };
-        editorKit.getOWLModelManager().addListener(modelManagerListener);
+        editorKit.getOWLModelManager().addListener(ontologyChangedListener);
         editorKit.getOWLModelManager().addOntologyChangeListener(updateIndexListener);
         initialiseIndex();
     }
@@ -177,7 +171,7 @@ public class SearchTabManager extends LuceneSearcher {
     @Override
     public void dispose() {
         editorKit.getOWLModelManager().removeOntologyChangeListener(updateIndexListener);
-        editorKit.getModelManager().removeListener(modelManagerListener);
+        editorKit.getModelManager().removeListener(ontologyChangedListener);
         disposeIndexDelegator();
     }
 
