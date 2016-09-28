@@ -56,8 +56,6 @@ public class SearchTabManager extends LuceneSearcher {
 
     private IndexDelegator indexDelegator;
 
-    private Directory indexDirectory;
-
     private OWLOntology currentActiveOntology;
 
     private final List<ProgressMonitor> progressMonitors = new ArrayList<>();
@@ -69,18 +67,10 @@ public class SearchTabManager extends LuceneSearcher {
     private OWLModelManagerListener ontologyChangedListener = event -> {
         OWLOntology activeOntology = editorKit.getOWLModelManager().getActiveOntology();
         if (isCacheChangingEvent(event)) {
-            if (currentActiveOntology != null) {
-                /*
-                 * A workaround: Protege signals ACTIVE_ONTOLOGY_CHANGED twice when opening an ontology.
-                 * The loadOrCreateIndexDirectory() method shouldn't be called twice if the new active
-                 * ontology is the same as the current active ontology.
-                 */
-                 if (!currentActiveOntology.equals(activeOntology)) {
-                    loadIndex(activeOntology);
-                 }
-            }
-            else {
-                loadIndex(activeOntology);
+            disposeIndexDelegator();
+            if (!activeOntology.isEmpty()) {
+                currentActiveOntology = activeOntology;
+                markIndexAsStale();
             }
         }
         else if (isCacheSavingEvent(event)) {
@@ -102,12 +92,6 @@ public class SearchTabManager extends LuceneSearcher {
         categories.add(SearchCategory.LOGICAL_AXIOM);
         editorKit.getOWLModelManager().addListener(ontologyChangedListener);
         editorKit.getOWLModelManager().addOntologyChangeListener(updateIndexListener);
-        initialiseIndex();
-    }
-
-    private void initialiseIndex() {
-        OWLOntology activeOntology = editorKit.getOWLModelManager().getActiveOntology();
-        loadIndex(activeOntology);
     }
 
     private boolean isCacheChangingEvent(OWLModelManagerChangeEvent event) {
@@ -118,22 +102,11 @@ public class SearchTabManager extends LuceneSearcher {
         return event.isType(EventType.ONTOLOGY_SAVED);
     }
 
-    private void loadIndex(OWLOntology activeOntology) {
-        if (activeOntology != null && !activeOntology.isEmpty()) {
-            logger.info("Initializing index");
-            currentActiveOntology = activeOntology;
-            loadIndexDirectory(activeOntology);
-            markIndexAsStale();
-        }
-    }
-
-    public void rebuildIndex(OWLOntology targetOntology) {
-        if (targetOntology != null && !targetOntology.isEmpty()) {
-            logger.info("Rebuilding index");
-            removeIndexDirectory(targetOntology);
-            loadIndexDirectory(targetOntology);
-            service.submit(this::buildingIndex);
-        }
+    public void rebuildIndex() {
+        logger.info("Rebuilding index");
+        removeIndexDirectory();
+        loadIndexDirectory();
+        service.submit(this::buildingIndex);
     }
 
     private void updateIndex(List<? extends OWLOntologyChange> changes) {
@@ -177,17 +150,14 @@ public class SearchTabManager extends LuceneSearcher {
 
     private void disposeIndexDelegator() {
         try {
-            if (indexDelegator != null && indexLocationExists()) {
+            if (indexDelegator != null) {
                 indexDelegator.dispose();
+                indexDelegator = null;
             }
         }
         catch (IOException e) {
             logger.error("Failed to dispose index delegator", e);
         }
-    }
-
-    private boolean indexLocationExists() {
-        return LuceneSearchPreferences.getIndexLocation(currentActiveOntology).isPresent();
     }
 
     @Override
@@ -197,9 +167,6 @@ public class SearchTabManager extends LuceneSearcher {
 
     @Override
     protected IndexSearcher getIndexSearcher() throws IOException {
-        if (indexDelegator == null) {
-            throw new RuntimeException("No index was loaded");
-        }
         return indexDelegator.getSearcher();
     }
 
@@ -218,7 +185,9 @@ public class SearchTabManager extends LuceneSearcher {
     public void performSearch(String searchString, SearchResultHandler searchResultHandler) {
         try {
             if (lastSearchId.getAndIncrement() == 0) {
-                if (!DirectoryReader.indexExists(getIndexDirectory())) {
+                Directory indexDirectory = loadIndexDirectory();
+                initializeIndexDelegator(indexDirectory);
+                if (!DirectoryReader.indexExists(indexDirectory)) {
                     logger.info("Building index");
                     service.submit(this::buildingIndex);
                 }
@@ -234,7 +203,9 @@ public class SearchTabManager extends LuceneSearcher {
     public void performSearch(SearchTabQuery userQuery, SearchTabResultHandler searchTabResultHandler) {
         try {
             if (lastSearchId.getAndIncrement() == 0) {
-                if (!DirectoryReader.indexExists(getIndexDirectory())) {
+                Directory indexDirectory = loadIndexDirectory();
+                initializeIndexDelegator(indexDirectory);
+                if (!DirectoryReader.indexExists(indexDirectory)) {
                     logger.info("Building index");
                     service.submit(this::buildingIndex);
                 }
@@ -251,28 +222,22 @@ public class SearchTabManager extends LuceneSearcher {
         stopSearch.set(true);
     }
 
-    private void loadIndexDirectory(@Nonnull OWLOntology targetOntology) {
-        try {
-            if (LuceneSearchPreferences.useInMemoryIndexStoring()
-                    && isOntologySizeBelowMaximumStoringLimit(targetOntology)) {
-                loadIndexFromMemory();
-            }
-            else {
-                loadIndexFromLocalDisk(targetOntology);
-            }
+    private Directory loadIndexDirectory() {
+        if (LuceneSearchPreferences.useInMemoryIndexStoring() && isOntologySizeBelowMaximumStoringLimit()) {
+            return loadIndexFromMemory();
         }
-        catch (IOException e) {
-            throw new RuntimeException("Failed to setup index directory", e);
+        else {
+            return loadIndexFromLocalDisk();
         }
     }
 
-    private void removeIndexDirectory(@Nonnull OWLOntology targetOntology) {
-        LuceneSearchPreferences.removeIndexLocation(targetOntology);
-        indexDelegator = null;
+    private void removeIndexDirectory() {
+        LuceneSearchPreferences.removeIndexLocation(currentActiveOntology);
+        disposeIndexDelegator();
     }
 
-    private boolean isOntologySizeBelowMaximumStoringLimit(OWLOntology targetOntology) {
-        Optional<File> ontologyFile = getOntologyFile(targetOntology);
+    private boolean isOntologySizeBelowMaximumStoringLimit() {
+        Optional<File> ontologyFile = getOntologyFile(currentActiveOntology);
         if (!ontologyFile.isPresent()) {
             return false; // the ontology has no physical file
         }
@@ -287,16 +252,19 @@ public class SearchTabManager extends LuceneSearcher {
         return shouldStoreInDisk;
     }
 
-    private void loadIndexFromMemory() throws IOException {
+    private Directory loadIndexFromMemory() {
         logger.info("Storing index into RAM memory");
-        Directory directory = new RAMDirectory();
-        setIndexDirectory(directory);
+        return new RAMDirectory();
     }
 
-    private void loadIndexFromLocalDisk(OWLOntology targetOntology) throws IOException {
-        String indexLocation = LuceneSearchPreferences.findIndexLocation(targetOntology);
-        Directory directory = FSDirectory.open(Paths.get(indexLocation));
-        setIndexDirectory(directory);
+    private Directory loadIndexFromLocalDisk() {
+        String indexLocation = LuceneSearchPreferences.findIndexLocation(currentActiveOntology);
+        try {
+            return FSDirectory.open(Paths.get(indexLocation));
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Failed to load index directory at " + indexLocation, e);
+        }
     }
 
     private Optional<File> getOntologyFile(OWLOntology targetOntology) {
@@ -308,32 +276,8 @@ public class SearchTabManager extends LuceneSearcher {
         return Optional.ofNullable(ontologyFile);
     }
 
-    private Directory getIndexDirectory() {
-        return indexDirectory;
-    }
-
-    private void setIndexDirectory(Directory indexDirectory) throws IOException {
-        this.indexDirectory = indexDirectory;
-        fireIndexDirectoryChange();
-    }
-
-    private void fireIndexDirectoryChange() throws IOException {
-        setupIndexDelegator();
-    }
-
-    private void setupIndexDelegator() throws IOException {
-        IndexDelegator newDelegator = null;
-        if (getIndexDirectory() != null) {
-            newDelegator = IndexDelegator.getInstance(getIndexDirectory(), indexer.getIndexWriterConfig());
-        }
-        setIndexDelegator(newDelegator);
-    }
-
-    private void setIndexDelegator(IndexDelegator indexDelegator) throws IOException {
-        if (this.indexDelegator != null) {
-            this.indexDelegator.dispose();
-        }
-        this.indexDelegator = indexDelegator;
+    private void initializeIndexDelegator(Directory indexDirectory) throws IOException {
+        indexDelegator = IndexDelegator.getInstance(indexDirectory, indexer.getIndexWriterConfig());
     }
 
     private List<SearchQuery> prepareQuery(String searchString) {
