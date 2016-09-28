@@ -24,7 +24,7 @@ public class IndexAction extends ProtegeOWLAction {
     public void actionPerformed(ActionEvent e) {
         SearchTabManager searchManager = getSearchManager();
         if (searchManager != null) {
-            searchManager.rebuildIndex(editorKit.getOWLModelManager().getActiveOntology());
+            searchManager.rebuildIndex();
         } else {
             JOptionPane.showMessageDialog(editorKit.getOWLWorkspace(), new JLabel("Unable to index ontology. Ensure that" +
                             " 'Lucene search' is selected in the Protégé preferences (under the 'General' tab, in the 'Search type' option)."),
