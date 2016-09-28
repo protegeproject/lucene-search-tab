@@ -163,16 +163,6 @@ public class QueryEditorPanel extends JPanel implements Disposable {
         }
     };
 
-    private ActionListener indexBtnListener = e -> {
-        SearchTabManager searchManager = getSearchManager();
-        if (searchManager != null) {
-            searchManager.rebuildIndex(editorKit.getOWLModelManager().getActiveOntology());
-        }
-        else {
-            showInvalidSearchManagerErrorDialog();
-        }
-    };
-
     private void showInvalidSearchManagerErrorDialog() {
         JOptionPane.showMessageDialog(editorKit.getOWLWorkspace(), new JLabel("Unable to perform Lucene search. Ensure that" +
                 " 'Lucene search tab' is selected in the Protégé preferences (under the 'General' tab, in the 'Search type' option)."),
