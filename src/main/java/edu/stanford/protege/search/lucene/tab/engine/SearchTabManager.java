@@ -105,7 +105,7 @@ public class SearchTabManager extends LuceneSearcher {
     public void rebuildIndex() {
         logger.info("Rebuilding index");
         removeIndexDirectory();
-        loadIndexDirectory();
+        openIndexDirectory();
         service.submit(this::buildingIndex);
     }
 
@@ -186,8 +186,8 @@ public class SearchTabManager extends LuceneSearcher {
     public void performSearch(String searchString, SearchResultHandler searchResultHandler) {
         try {
             if (lastSearchId.getAndIncrement() == 0) {
-                Directory indexDirectory = loadIndexDirectory();
-                initializeIndexDelegator(indexDirectory);
+                Directory indexDirectory = openIndexDirectory();
+                initIndexDelegator(indexDirectory);
                 if (!DirectoryReader.indexExists(indexDirectory)) {
                     service.submit(this::buildingIndex);
                 }
@@ -203,8 +203,8 @@ public class SearchTabManager extends LuceneSearcher {
     public void performSearch(SearchTabQuery userQuery, SearchTabResultHandler searchTabResultHandler) {
         try {
             if (lastSearchId.getAndIncrement() == 0) {
-                Directory indexDirectory = loadIndexDirectory();
-                initializeIndexDelegator(indexDirectory);
+                Directory indexDirectory = openIndexDirectory();
+                initIndexDelegator(indexDirectory);
                 if (!DirectoryReader.indexExists(indexDirectory)) {
                     service.submit(this::buildingIndex);
                 }
@@ -221,11 +221,11 @@ public class SearchTabManager extends LuceneSearcher {
         stopSearch.set(true);
     }
 
-    private Directory loadIndexDirectory() {
+    private Directory openIndexDirectory() {
         if (LuceneIndexPreferences.useInMemoryIndexStoring() && isOntologySizeBelowMaximumStoringLimit()) {
-            return loadIndexFromMemory();
+            return openIndexDirectoryInMemory();
         } else {
-            return loadIndexFromLocalDisk();
+            return openIndexDirectoryInDisk();
         }
     }
 
@@ -251,12 +251,12 @@ public class SearchTabManager extends LuceneSearcher {
         return shouldStoreInDisk;
     }
 
-    private Directory loadIndexFromMemory() {
+    private Directory openIndexDirectoryInMemory() {
         logger.info("Opening index directory from RAM memory");
         return new RAMDirectory();
     }
 
-    private Directory loadIndexFromLocalDisk() {
+    private Directory openIndexDirectoryInDisk() {
         final IRI ontologyIri = getActiveOntology().getOntologyID().getOntologyIRI().get();
         String indexLocation = LuceneIndexPreferences.getIndexDirectoryLocation(ontologyIri);
         try {
@@ -278,7 +278,7 @@ public class SearchTabManager extends LuceneSearcher {
         return Optional.ofNullable(ontologyFile);
     }
 
-    private void initializeIndexDelegator(Directory indexDirectory) {
+    private void initIndexDelegator(Directory indexDirectory) {
         logger.info("Initializing index delegator");
         try {
             indexDelegator = IndexDelegator.getInstance(indexDirectory, indexer.getIndexWriterConfig());
