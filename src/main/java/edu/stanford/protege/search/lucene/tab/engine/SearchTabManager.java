@@ -55,7 +55,7 @@ public class SearchTabManager extends LuceneSearcher {
 
     private IndexDelegator indexDelegator;
 
-    private OWLOntology currentActiveOntology;
+    private SearchContext searchContext;
 
     private final List<ProgressMonitor> progressMonitors = new ArrayList<>();
 
@@ -71,7 +71,7 @@ public class SearchTabManager extends LuceneSearcher {
                 if (!LuceneIndexPreferences.containsIndexRecord(activeOntology)) {
                     LuceneIndexPreferences.addIndexRecord(activeOntology);
                 }
-                currentActiveOntology = activeOntology;
+                initSearchContext();
                 markIndexAsStale();
             }
         }
@@ -91,10 +91,15 @@ public class SearchTabManager extends LuceneSearcher {
         categories.add(SearchCategory.LOGICAL_AXIOM);
         editorKit.getOWLModelManager().addListener(ontologyChangedListener);
         editorKit.getOWLModelManager().addOntologyChangeListener(updateIndexListener);
+        initSearchContext();
     }
 
     private boolean isCacheChangingEvent(OWLModelManagerChangeEvent event) {
         return event.isType(EventType.ACTIVE_ONTOLOGY_CHANGED);
+    }
+
+    private void initSearchContext() {
+        searchContext = new SearchContext(editorKit);
     }
 
     public void rebuildIndex() {
@@ -108,7 +113,7 @@ public class SearchTabManager extends LuceneSearcher {
         if (indexDelegator != null) {
             logger.info("Updating index from " + changes.size() + " change(s)");
             service.submit(() -> updatingIndex(changes));
-            LuceneIndexPreferences.updateIndexChecksum(currentActiveOntology);
+            LuceneIndexPreferences.updateIndexChecksum(getActiveOntology());
         }
     }
 
@@ -126,6 +131,10 @@ public class SearchTabManager extends LuceneSearcher {
 
     private void markIndexAsStale() {
         lastSearchId.set(0);
+    }
+
+    private OWLOntology getActiveOntology() {
+        return searchContext.getActiveOntology();
     }
 
     @Override
@@ -223,13 +232,13 @@ public class SearchTabManager extends LuceneSearcher {
     }
 
     private void removeIndexDirectory() {
-        final IRI ontologyIri = currentActiveOntology.getOntologyID().getOntologyIRI().get();
+        final IRI ontologyIri = getActiveOntology().getOntologyID().getOntologyIRI().get();
         LuceneIndexPreferences.removeIndexRecord(ontologyIri);
         disposeIndexDelegator();
     }
 
     private boolean isOntologySizeBelowMaximumStoringLimit() {
-        Optional<File> ontologyFile = getOntologyFile(currentActiveOntology);
+        Optional<File> ontologyFile = getOntologyFile(getActiveOntology());
         if (!ontologyFile.isPresent()) {
             return false; // the ontology has no physical file
         }
@@ -250,7 +259,7 @@ public class SearchTabManager extends LuceneSearcher {
     }
 
     private Directory loadIndexFromLocalDisk() {
-        final IRI ontologyIri = currentActiveOntology.getOntologyID().getOntologyIRI().get();
+        final IRI ontologyIri = getActiveOntology().getOntologyID().getOntologyIRI().get();
         String indexLocation = LuceneIndexPreferences.getIndexDirectoryLocation(ontologyIri);
         try {
             return FSDirectory.open(Paths.get(indexLocation));
@@ -284,8 +293,8 @@ public class SearchTabManager extends LuceneSearcher {
     private void buildingIndex() {
         fireIndexingStarted();
         try {
-            indexer.doIndex(indexDelegator, new SearchContext(editorKit), progress -> fireIndexingProgressed(progress));
-            LuceneIndexPreferences.updateIndexChecksum(currentActiveOntology);
+            indexer.doIndex(indexDelegator, searchContext, progress -> fireIndexingProgressed(progress));
+            LuceneIndexPreferences.updateIndexChecksum(getActiveOntology());
         }
         catch (IOException e) {
             logger.error("... build index failed", e);
