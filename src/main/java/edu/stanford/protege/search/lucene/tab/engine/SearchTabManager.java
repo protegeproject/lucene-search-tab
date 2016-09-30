@@ -109,9 +109,9 @@ public class SearchTabManager extends LuceneSearcher {
 
     public void rebuildIndex() {
         logger.info("Rebuilding index");
+        disposeIndexDelegator();
         removeIndexDirectory();
-        openIndexDirectory();
-        service.submit(this::buildingIndex);
+        initIndex();
     }
 
     private void updateIndex(List<? extends OWLOntologyChange> changes) {
@@ -213,7 +213,6 @@ public class SearchTabManager extends LuceneSearcher {
     private void removeIndexDirectory() {
         final IRI ontologyIri = getActiveOntology().getOntologyID().getOntologyIRI().get();
         LuceneIndexPreferences.removeIndexRecord(ontologyIri);
-        disposeIndexDelegator();
     }
 
     private boolean isOntologySizeBelowMaximumStoringLimit() {
