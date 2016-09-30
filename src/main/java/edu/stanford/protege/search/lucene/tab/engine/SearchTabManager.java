@@ -38,6 +38,8 @@ public class SearchTabManager extends LuceneSearcher {
 
     private static final Logger logger = LoggerFactory.getLogger(SearchTabManager.class);
 
+    private final List<ProgressMonitor> progressMonitors = new ArrayList<>();
+
     private OWLEditorKit editorKit;
 
     private Set<SearchCategory> categories = new HashSet<>();
@@ -56,19 +58,9 @@ public class SearchTabManager extends LuceneSearcher {
 
     private SearchContext searchContext;
 
-    private final List<ProgressMonitor> progressMonitors = new ArrayList<>();
+    private OWLModelManagerListener ontologyChangedListener;
 
-    private OWLOntologyChangeListener updateIndexListener = changes -> {
-        updateIndex(changes);
-    };
-
-    private OWLModelManagerListener ontologyChangedListener = event -> {
-        if (isCacheChangingEvent(event)) {
-            disposeIndexDelegator();
-            markIndexAsStale();
-            initIndex();
-        }
-    };
+    private OWLOntologyChangeListener updateIndexListener;
 
     public SearchTabManager() {
         // NO-OP
@@ -82,9 +74,19 @@ public class SearchTabManager extends LuceneSearcher {
         categories.add(SearchCategory.IRI);
         categories.add(SearchCategory.ANNOTATION_VALUE);
         categories.add(SearchCategory.LOGICAL_AXIOM);
+        ontologyChangedListener = this::handleModelManagerEvent;
+        updateIndexListener = changes -> updateIndex(changes);
         editorKit.getOWLModelManager().addListener(ontologyChangedListener);
         editorKit.getOWLModelManager().addOntologyChangeListener(updateIndexListener);
         initSearchContext();
+    }
+
+    private void handleModelManagerEvent(OWLModelManagerChangeEvent event) {
+        if (isCacheChangingEvent(event)) {
+            disposeIndexDelegator();
+            markIndexAsStale();
+            initIndex();
+        }
     }
 
     private boolean isCacheChangingEvent(OWLModelManagerChangeEvent event) {
