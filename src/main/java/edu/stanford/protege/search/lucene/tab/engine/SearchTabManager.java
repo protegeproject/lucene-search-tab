@@ -66,6 +66,7 @@ public class SearchTabManager extends LuceneSearcher {
         if (isCacheChangingEvent(event)) {
             disposeIndexDelegator();
             markIndexAsStale();
+            initIndex();
         }
     };
 
@@ -92,6 +93,16 @@ public class SearchTabManager extends LuceneSearcher {
 
     private void initSearchContext() {
         searchContext = new SearchContext(editorKit);
+    }
+
+    private void initIndex() {
+        if (searchContext.isIndexable()) {
+            initIndexRecord();
+            initIndexDelegator();
+            if (!indexDelegator.indexExists()) {
+                service.submit(this::buildingIndex);
+            }
+        }
     }
 
     public void rebuildIndex() {
@@ -176,29 +187,11 @@ public class SearchTabManager extends LuceneSearcher {
 
     @Override
     public void performSearch(String searchString, SearchResultHandler searchResultHandler) {
-        if (lastSearchId.getAndIncrement() == 0) {
-            if (searchContext.isIndexable()) {
-                initIndexRecord();
-                initIndexDelegator();
-                if (!indexDelegator.indexExists()) {
-                    service.submit(this::buildingIndex);
-                }
-            }
-        }
         List<SearchQuery> searchQueries = prepareQuery(searchString);
         service.submit(new SearchCallable(lastSearchId.incrementAndGet(), searchQueries, searchResultHandler));
     }
 
     public void performSearch(SearchTabQuery userQuery, SearchTabResultHandler searchTabResultHandler) {
-        if (lastSearchId.getAndIncrement() == 0) {
-            if (searchContext.isIndexable()) {
-                initIndexRecord();
-                initIndexDelegator();
-                if (!indexDelegator.indexExists()) {
-                    service.submit(this::buildingIndex);
-                }
-            }
-        }
         stopSearch.set(false);
         service.submit(new SearchTabCallable(lastSearchId.incrementAndGet(), userQuery, searchTabResultHandler));
     }
