@@ -1,7 +1,6 @@
 package edu.stanford.protege.search.lucene.tab.engine;
 
 import com.google.common.base.Stopwatch;
-import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -64,16 +63,9 @@ public class SearchTabManager extends LuceneSearcher {
     };
 
     private OWLModelManagerListener ontologyChangedListener = event -> {
-        OWLOntology activeOntology = editorKit.getOWLModelManager().getActiveOntology();
         if (isCacheChangingEvent(event)) {
             disposeIndexDelegator();
-            if (!activeOntology.isEmpty() && !activeOntology.isAnonymous()) {
-                if (!LuceneIndexPreferences.containsIndexRecord(activeOntology)) {
-                    LuceneIndexPreferences.addIndexRecord(activeOntology);
-                }
-                initSearchContext();
-                markIndexAsStale();
-            }
+            markIndexAsStale();
         }
     };
 
@@ -95,7 +87,8 @@ public class SearchTabManager extends LuceneSearcher {
     }
 
     private boolean isCacheChangingEvent(OWLModelManagerChangeEvent event) {
-        return event.isType(EventType.ACTIVE_ONTOLOGY_CHANGED);
+        return event.isType(EventType.ACTIVE_ONTOLOGY_CHANGED)
+                || event.isType(EventType.ENTITY_RENDERING_CHANGED);
     }
 
     private void initSearchContext() {
@@ -184,37 +177,31 @@ public class SearchTabManager extends LuceneSearcher {
 
     @Override
     public void performSearch(String searchString, SearchResultHandler searchResultHandler) {
-        try {
-            if (lastSearchId.getAndIncrement() == 0) {
-                Directory indexDirectory = openIndexDirectory();
-                initIndexDelegator(indexDirectory);
-                if (!DirectoryReader.indexExists(indexDirectory)) {
+        if (lastSearchId.getAndIncrement() == 0) {
+            if (searchContext.isIndexable()) {
+                initIndexRecord();
+                initIndexDelegator();
+                if (!indexDelegator.indexExists()) {
                     service.submit(this::buildingIndex);
                 }
             }
-            List<SearchQuery> searchQueries = prepareQuery(searchString);
-            service.submit(new SearchCallable(lastSearchId.incrementAndGet(), searchQueries, searchResultHandler));
         }
-        catch (IOException e) {
-            logger.error("Failed to perform search", e);
-        }
+        List<SearchQuery> searchQueries = prepareQuery(searchString);
+        service.submit(new SearchCallable(lastSearchId.incrementAndGet(), searchQueries, searchResultHandler));
     }
 
     public void performSearch(SearchTabQuery userQuery, SearchTabResultHandler searchTabResultHandler) {
-        try {
-            if (lastSearchId.getAndIncrement() == 0) {
-                Directory indexDirectory = openIndexDirectory();
-                initIndexDelegator(indexDirectory);
-                if (!DirectoryReader.indexExists(indexDirectory)) {
+        if (lastSearchId.getAndIncrement() == 0) {
+            if (searchContext.isIndexable()) {
+                initIndexRecord();
+                initIndexDelegator();
+                if (!indexDelegator.indexExists()) {
                     service.submit(this::buildingIndex);
                 }
             }
-            stopSearch.set(false);
-            service.submit(new SearchTabCallable(lastSearchId.incrementAndGet(), userQuery, searchTabResultHandler));
         }
-        catch (IOException e) {
-            logger.error("Failed to perform search", e);
-        }
+        stopSearch.set(false);
+        service.submit(new SearchTabCallable(lastSearchId.incrementAndGet(), userQuery, searchTabResultHandler));
     }
 
     public void stopSearch() {
@@ -278,9 +265,16 @@ public class SearchTabManager extends LuceneSearcher {
         return Optional.ofNullable(ontologyFile);
     }
 
-    private void initIndexDelegator(Directory indexDirectory) {
+    private void initIndexRecord() {
+        if (!LuceneIndexPreferences.containsIndexRecord(getActiveOntology())) {
+            LuceneIndexPreferences.addIndexRecord(getActiveOntology());
+        }
+    }
+
+    private void initIndexDelegator() {
         logger.info("Initializing index delegator");
         try {
+            final Directory indexDirectory = openIndexDirectory();
             indexDelegator = IndexDelegator.getInstance(indexDirectory, indexer.getIndexWriterConfig());
         } catch (IOException e) {
             logger.error("... initialize index delegator failed");
