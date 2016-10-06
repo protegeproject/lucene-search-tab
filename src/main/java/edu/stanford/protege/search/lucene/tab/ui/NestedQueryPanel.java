@@ -23,8 +23,9 @@ public class NestedQueryPanel extends QueryPanel {
      *
      * @param editorKit OWL Editor Kit
      */
-    public NestedQueryPanel(OWLEditorKit editorKit) {
+    public NestedQueryPanel(OWLEditorKit editorKit, JButton b) {
         super(editorKit);
+        searchBtn = b;
         initUi();
     }
 
@@ -47,7 +48,7 @@ public class NestedQueryPanel extends QueryPanel {
         parent.add(getPropertySelectionPanel());
         add(parent, BorderLayout.NORTH);
 
-        editorPanel = new QueryEditorPanel(editorKit, false, true);
+        editorPanel = new QueryEditorPanel(editorKit, false, true, searchBtn);
         add(editorPanel, BorderLayout.CENTER);
     }
 

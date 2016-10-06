@@ -19,6 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class QueryPanel extends JPanel implements Disposable {
     protected OWLEditorKit editorKit;
     protected JButton closeBtn;
+    
+    protected JButton searchBtn = null;
 
     /**
      * Constructor
@@ -67,5 +69,9 @@ public abstract class QueryPanel extends JPanel implements Disposable {
     }
 
     public abstract void dispose();
+    
+    public void setSearchButton(JButton sb) {
+    	this.searchBtn = sb;
+    }
 
 }
