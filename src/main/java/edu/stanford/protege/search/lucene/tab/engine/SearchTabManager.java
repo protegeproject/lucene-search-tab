@@ -114,7 +114,7 @@ public class SearchTabManager extends LuceneSearcher {
         initIndex();
     }
 
-    private void updateIndex(List<? extends OWLOntologyChange> changes) {
+    public void updateIndex(List<? extends OWLOntologyChange> changes) {
         if (indexDelegator != null) {
             service.submit(() -> updatingIndex(changes));
             LuceneIndexPreferences.updateIndexChecksum(getActiveOntology());
@@ -460,4 +460,15 @@ public class SearchTabManager extends LuceneSearcher {
             }
         });
     }
+
+	@Override
+	public void enableIncrementalIndexing() {
+		editorKit.getOWLModelManager().addOntologyChangeListener(updateIndexListener);		
+	}
+
+	@Override
+	public void disableIncrementalIndexing() {
+		editorKit.getOWLModelManager().removeOntologyChangeListener(updateIndexListener);
+		
+	}
 }
