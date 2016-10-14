@@ -117,7 +117,6 @@ public class SearchTabManager extends LuceneSearcher {
     public void updateIndex(List<? extends OWLOntologyChange> changes) {
         if (indexDelegator != null) {
             service.submit(() -> updatingIndex(changes));
-            LuceneIndexPreferences.updateIndexChecksum(getActiveOntology());
         }
     }
 
@@ -288,7 +287,6 @@ public class SearchTabManager extends LuceneSearcher {
         fireIndexingStarted();
         try {
             indexer.doIndex(indexDelegator, searchContext, progress -> fireIndexingProgressed(progress));
-            LuceneIndexPreferences.updateIndexChecksum(getActiveOntology());
         }
         catch (IOException e) {
             logger.error("... build index failed", e);
