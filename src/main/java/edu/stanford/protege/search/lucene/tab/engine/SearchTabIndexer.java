@@ -111,21 +111,43 @@ public class SearchTabIndexer extends AbstractLuceneIndexer {
                     doc.add(new StringField(IndexField.ANNOTATION_IRI, getEntityId(axiom.getProperty()), Store.YES));
                     doc.add(new TextField(IndexField.ANNOTATION_DISPLAY_NAME, getDisplayName(axiom.getProperty()), Store.YES));
                     OWLAnnotationValue value = axiom.getAnnotation().getValue();
-                    if (value instanceof OWLLiteral) {
-                        OWLLiteral literal = (OWLLiteral) value;
-                        if (literal.getDatatype().getIRI().equals(XSDVocabulary.ANY_URI.getIRI())) {
-                            doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, literal.getLiteral(), Store.YES));
-                        }
-                        else {
-                            doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
-                        }
-                    }
-                    else if (value instanceof IRI) {
-                        IRI iri = (IRI) value;
-                        doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, iri.toString(), Store.YES));
-                    }
+                    
+                    doc = addPropValToDoc(doc, value);
+                    
                     documents.add(doc);
+                    // add annotations on annotations
+                    for (OWLAnnotation ann : axiom.getAnnotations()) {
+                    	doc = new Document();
+                    	doc.add(new TextField(IndexField.ENTITY_IRI, getEntityId(entity), Store.YES));
+                        doc.add(new TextField(IndexField.DISPLAY_NAME, getDisplayName(entity), Store.YES));
+                        
+                        doc.add(new StringField(IndexField.ANNOTATION_IRI, getEntityId(ann.getProperty()), Store.YES));
+                        doc.add(new TextField(IndexField.ANNOTATION_DISPLAY_NAME, getDisplayName(ann.getProperty()), Store.YES));
+                       
+                        value = ann.getValue();
+                        doc = addPropValToDoc(doc, value);
+                        
+                        documents.add(doc);
+                    	
+                    }
                 }
+            }
+            
+            private Document addPropValToDoc(Document doc, OWLAnnotationValue value) {
+            	if (value instanceof OWLLiteral) {
+                    OWLLiteral literal = (OWLLiteral) value;
+                    if (literal.getDatatype().getIRI().equals(XSDVocabulary.ANY_URI.getIRI())) {
+                        doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, literal.getLiteral(), Store.YES));
+                    }
+                    else {
+                        doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
+                    }
+                }
+                else if (value instanceof IRI) {
+                    IRI iri = (IRI) value;
+                    doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, iri.toString(), Store.YES));
+                }
+            	return doc;
             }
 
             @Override

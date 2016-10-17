@@ -71,7 +71,7 @@ public class BasicQueryPanel extends QueryPanel {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					System.out.println("Enter me");
+					//System.out.println("Enter me");
 					searchBtn.doClick();
 				}
 			}
