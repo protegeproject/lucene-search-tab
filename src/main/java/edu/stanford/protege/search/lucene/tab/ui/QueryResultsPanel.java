@@ -51,6 +51,13 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     private Timer visibilityTimer;
     private FilteredQuery answeredQuery;
     private boolean categorisedEntityTypes = false, paged = false;
+    
+    private JButton gotResult = null;
+    
+    public QueryResultsPanel(OWLEditorKit k, JButton b) {
+    	this(k);
+    	gotResult = b;    	
+    }
 
     /**
      * Constructor
@@ -227,11 +234,15 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     }
 
     private void selectEntity() {
-        OWLEntity selectedEntity = getSelectedEntity();
-        if (selectedEntity != null) {
-            editorKit.getOWLWorkspace().getOWLSelectionModel().setSelectedEntity(selectedEntity);
-            editorKit.getOWLWorkspace().displayOWLEntity(selectedEntity);
-        }
+    	OWLEntity selectedEntity = getSelectedEntity();
+    	if (selectedEntity != null) {
+    		if (gotResult != null) {
+    			gotResult.doClick();
+    		} else {
+    			editorKit.getOWLWorkspace().getOWLSelectionModel().setSelectedEntity(selectedEntity);
+    			editorKit.getOWLWorkspace().displayOWLEntity(selectedEntity);
+    		}
+    	}
     }
 
     public OWLEntity getSelectedEntity() {
