@@ -36,6 +36,9 @@ public class QueryEditorPanel extends JPanel implements Disposable {
     private TreeSet<Integer> constraints = new TreeSet<>();
     private JPanel queriesPanel;
     private OWLEditorKit editorKit;
+    
+    private String queryInput = "";
+    private QueryType basicQueryType = null;
 
     /**
      * Constructor
@@ -110,6 +113,8 @@ public class QueryEditorPanel extends JPanel implements Disposable {
         }
         BasicQuery.Factory queryFactory = new BasicQuery.Factory(new SearchContext(editorKit), searchManager);
         boolean emptyQueries = false;
+        
+        
 
         // build a lucene query object from all the query clauses
         FilteredQuery.Builder builder = new FilteredQuery.Builder();
@@ -117,6 +122,13 @@ public class QueryEditorPanel extends JPanel implements Disposable {
             if(queryPanel.isBasicQuery()) {
                 BasicQuery basicQuery = getBasicQuery((BasicQueryPanel) queryPanel, queryFactory);
                 if(basicQuery != null) {
+                	if (basicQuery.isFullString()) {
+                		queryInput = ((BasicQueryPanel) queryPanel).getInputStringValue();
+                		this.basicQueryType = ((BasicQueryPanel) queryPanel).getSelectedQueryType();
+                	} else {
+                		queryInput = "";
+                		this.basicQueryType = null;
+                	}
                     builder.add(basicQuery);
                 } else {
                     emptyQueries = true;
@@ -174,7 +186,7 @@ public class QueryEditorPanel extends JPanel implements Disposable {
     private void handleResults(FilteredQuery query, Collection<OWLEntity> results) {
         LuceneQueryPanel queryPanel = getLuceneQueryPanel();
         if(queryPanel != null) {
-            queryPanel.getResultsPanel().setResults(query, results);
+            queryPanel.getResultsPanel().setResults(query, results, queryInput, basicQueryType);
             stopBtn.setVisible(false);
             searchBtn.setVisible(true);
         }

@@ -57,19 +57,24 @@ public final class QueryType {
     }
 
     public static List<QueryType> getTypesForOWLObject(OWLObject owlObject) {
-        List<QueryType> types = new ArrayList<>();
-        if (owlObject instanceof OWLDataProperty) {
-            types.addAll(ValueQueryTypes);
-            types.addAll(NonValueQueryTypes);
-        }
-        else if (owlObject instanceof OWLObjectProperty) {
-            types.addAll(NonValueQueryTypes);
-        }
-        else if (owlObject instanceof OWLAnnotationProperty) {
-            types.addAll(ValueQueryTypes);
-            types.addAll(NonValueQueryTypes);
-        }
-        return types; 
+    	List<QueryType> types = new ArrayList<>();
+    	if (owlObject instanceof OWLDataProperty) {
+    		types.addAll(ValueQueryTypes);
+    		types.addAll(NonValueQueryTypes);
+    	}
+    	else if (owlObject instanceof OWLObjectProperty) {
+    		types.addAll(NonValueQueryTypes);
+    	}
+    	else if (owlObject instanceof OWLAnnotationProperty) {
+    		if (((OWLAnnotationProperty) owlObject).getIRI().getShortForm().equals("label")) {
+    			types.addAll(FullStringQueryTypes);
+    		} else {
+    			types.addAll(ValueQueryTypes);
+    		}
+    		types.addAll(NonValueQueryTypes);
+
+    	}
+    	return types; 
     }
 
     public static QueryType valueOf(String queryTypeName) {
@@ -77,10 +82,14 @@ public final class QueryType {
             return CONTAINS;
         } else if(queryTypeName.equals(STARTS_WITH.name)) {
             return STARTS_WITH;
+        } else if(queryTypeName.equals(STARTS_WITH_STRING.name)) {
+            return STARTS_WITH_STRING;
         } else if(queryTypeName.equals(ENDS_WITH.name)) {
             return ENDS_WITH;
         } else if(queryTypeName.equals(EXACT_MATCH.name)) {
             return EXACT_MATCH;
+        } else if(queryTypeName.equals(EXACT_MATCH_STRING.name)) {
+            return EXACT_MATCH_STRING;
         } else if(queryTypeName.equals(PROPERTY_VALUE_ABSENT.name)) {
             return PROPERTY_VALUE_ABSENT;
         } else if(queryTypeName.equals(PROPERTY_VALUE_PRESENT.name)) {
@@ -103,9 +112,11 @@ public final class QueryType {
 
     //@formatter:off
     public static final QueryType CONTAINS = getInstance("ContainsQuery", "contains", true, false, false);
-    public static final QueryType STARTS_WITH = getInstance("StartsWithQuery", "starts with", true, false, false);
+    public static final QueryType STARTS_WITH = getInstance("StartsWithQuery", "starts with - token", true, false, false);
+    public static final QueryType STARTS_WITH_STRING = getInstance("StartsWithStringQuery", "starts with - string", true, false, false);
     public static final QueryType ENDS_WITH = getInstance("EndsWithQuery", "ends with", true, false, false);
-    public static final QueryType EXACT_MATCH = getInstance("ExactMatchQuery", "exact match", true, false, false);
+    public static final QueryType EXACT_MATCH = getInstance("ExactMatchQuery", "exact match - token", true, false, false);
+    public static final QueryType EXACT_MATCH_STRING = getInstance("ExactMatchStringQuery", "exact match - string", true, false, false);
     public static final QueryType PROPERTY_VALUE_ABSENT = getInstance("PropertyValueAbsentQuery", "property value absent", false, true, false);
     public static final QueryType PROPERTY_VALUE_PRESENT = getInstance("PropertyValuePresentQuery", "property value present", false, true, false);
     public static final QueryType PROPERTY_RESTRICTION_ABSENT = getInstance("PropertyRestrictionAbsentQuery", "property restriction absent", false, true, false);
@@ -116,8 +127,10 @@ public final class QueryType {
     public static final List<QueryType> QUERY_TYPES = CollectionFactory.list(
             CONTAINS,
             STARTS_WITH,
+            STARTS_WITH_STRING,
             ENDS_WITH,
             EXACT_MATCH,
+            EXACT_MATCH_STRING,
             PROPERTY_VALUE_ABSENT,
             PROPERTY_VALUE_PRESENT,
             PROPERTY_RESTRICTION_ABSENT,
@@ -129,6 +142,14 @@ public final class QueryType {
             STARTS_WITH,
             ENDS_WITH,
             EXACT_MATCH);
+    
+    public static final List<QueryType> FullStringQueryTypes = CollectionFactory.list(
+    		CONTAINS,
+            STARTS_WITH,
+            STARTS_WITH_STRING,
+            ENDS_WITH,
+            EXACT_MATCH,                        
+            EXACT_MATCH_STRING);
 
     public static final List<QueryType> NonValueQueryTypes = CollectionFactory.list(
             PROPERTY_VALUE_ABSENT,

@@ -25,6 +25,11 @@ import java.util.Set;
  * Date: 28/06/2016
  */
 public abstract class BasicQuery implements SearchTabQuery {
+	
+	private boolean fullString = false;
+	
+	public void setFullString(boolean b) {fullString = b;}
+	public boolean isFullString() {return fullString;}
 
     public abstract Query getLuceneQuery();
 
@@ -66,13 +71,14 @@ public abstract class BasicQuery implements SearchTabQuery {
                 }
                 else if (type.equals(QueryType.STARTS_WITH)) {
                     return createStartsWithFilter(property, toLowerCase(searchString));
-                }
+                }                
                 else if (type.equals(QueryType.ENDS_WITH)) {
                     return createEndsWithFilter(property, toLowerCase(searchString));
                 }
                 else if (type.equals(QueryType.EXACT_MATCH)) {
                     return createExactMatchFilter(property, toLowerCase(searchString));
-                }
+                } 
+                
             }
             else if (QueryType.NonValueQueryTypes.contains(type)) {
                 if (type.equals(QueryType.PROPERTY_VALUE_PRESENT)) {
@@ -88,10 +94,23 @@ public abstract class BasicQuery implements SearchTabQuery {
                     return createPropertyRestrictionAbsentFilter(property);
                 }
             }
+            else if (QueryType.FullStringQueryTypes.contains(type)) {
+            	if (type.equals(QueryType.STARTS_WITH_STRING)) {
+                    BasicQuery bq = createStartsWithFilter(property, toLowerCase(searchString));
+                    bq.setFullString(true);
+                    return bq;
+                }            	
+            	else if (type.equals(QueryType.EXACT_MATCH_STRING)) {
+                    BasicQuery bq = createExactMatchFilter(property, toLowerCase(searchString));
+                    bq.setFullString(true);
+                    return bq;
+                }                
+            }
             throw new IllegalArgumentException("Unsupported query type: " + type);
         }
 
         public KeywordQuery createContainsFilter(OWLProperty property, String searchString) {
+        	searchString = searchString.trim();
             if (isPhrase(searchString)) {
                 return new KeywordQuery(createContainsPhraseQuery(property, searchString), searcher,
                         String.format("%s contains %s", getDisplayName(property), searchString));

@@ -3,6 +3,8 @@ package edu.stanford.protege.search.lucene.tab.ui;
 import com.google.common.collect.ImmutableList;
 import edu.stanford.protege.csv.export.ui.ExportDialogPanel;
 import edu.stanford.protege.search.lucene.tab.engine.FilteredQuery;
+import edu.stanford.protege.search.lucene.tab.engine.QueryType;
+
 import org.protege.editor.core.Disposable;
 import org.protege.editor.core.ui.error.ErrorLogPanel;
 import org.protege.editor.core.ui.util.AugmentedJTextField;
@@ -11,6 +13,7 @@ import org.protege.editor.owl.model.event.EventType;
 import org.protege.editor.owl.model.event.OWLModelManagerListener;
 import org.protege.editor.owl.model.find.OWLEntityFinder;
 import org.protege.editor.owl.ui.renderer.OWLCellRenderer;
+import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLProperty;
 import org.semanticweb.owlapi.util.ProgressMonitor;
@@ -43,7 +46,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     private List<OWLEntity> classesList = new ArrayList<>(), propertiesList = new ArrayList<>(),
             individualsList = new ArrayList<>(), datatypesList = new ArrayList<>();
     private JCheckBox classes, properties, individuals, datatypes;
-    private AugmentedJTextField filterTextField;
+    public AugmentedJTextField filterTextField;
     private JLabel statusLbl, pageLbl;
     private JButton exportBtn, backBtn, forwardBtn;
     private int currentPage = 0, totalPages;
@@ -172,17 +175,17 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     private DocumentListener filterTextListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent e) {
-            filterTextField(true);
+            filterTextField(true, false);
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
-            filterTextField(true);
+            filterTextField(true, false);
         }
 
         @Override
         public void changedUpdate(DocumentEvent e) {
-            filterTextField(true);
+            filterTextField(true, false);
         }
     };
 
@@ -338,7 +341,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         if(!checkBox.isSelected()) {
             entityTypesFilteredResults.removeAll(bucket);
         } else {
-            filterTextField(false);
+            filterTextField(false, false);
             if(txtFieldFilteredResults != null) {
                 List<OWLEntity> l = new ArrayList<>(bucket);
                 l.retainAll(txtFieldFilteredResults);
@@ -358,7 +361,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
      *
      * @param filterEntityTypes true if this filter should take into account the status of entity type filter checkboxes, false otherwise
      */
-    private void filterTextField(boolean filterEntityTypes) {
+    private void filterTextField(boolean filterEntityTypes, boolean exact) {
         if(resultsList == null || resultsList.isEmpty()) {
             return;
         }
@@ -367,10 +370,17 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         if(toMatch.isEmpty()) {
             output = new ArrayList<>(resultsList);
         } else {
-            OWLEntityFinder finder = editorKit.getModelManager().getOWLEntityFinder();
-            Set<OWLEntity> foundEntities = finder.getMatchingOWLEntities(toMatch);
-            foundEntities.retainAll(resultsList);
-            output = new ArrayList<>(foundEntities);
+        	OWLEntityFinder finder = editorKit.getModelManager().getOWLEntityFinder();
+        	Set<OWLEntity> foundEntities = new HashSet<OWLEntity>();
+        	if (!exact) {
+        		foundEntities = finder.getMatchingOWLEntities(toMatch);
+        	} else {
+        		OWLClass cls = finder.getOWLClass(toMatch);
+        		foundEntities.add(cls);
+
+        	}
+        	foundEntities.retainAll(resultsList);
+        	output = new ArrayList<>(foundEntities);
         }
         if(filterEntityTypes) {
             if (!classes.isSelected()) {
@@ -448,8 +458,8 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         }
     }
 
-    public void setResults(FilteredQuery query, Collection<OWLEntity> entities) {
-        filterTextField.setText("");
+    public void setResults(FilteredQuery query, Collection<OWLEntity> entities, String queryInput, QueryType type) {
+        filterTextField.setText(queryInput);
         setCheckBoxSelection(true);
         exportBtn.setEnabled(true);
         answeredQuery = checkNotNull(query);
@@ -459,6 +469,15 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         entityTypesFilteredResults = resultsList;
         txtFieldFilteredResults = resultsList;
         setListData(resultsList, true);
+        if (type != null) {
+        	if (type.equals(QueryType.EXACT_MATCH_STRING)) {
+        		filterTextField(true, true);
+        		
+        	} else if (type.equals(QueryType.STARTS_WITH_STRING)) {
+        		filterTextField(true, false);        		
+        	}       	
+        }
+        
     }
 
     private List<List<OWLEntity>> divideList(List<OWLEntity> list) {

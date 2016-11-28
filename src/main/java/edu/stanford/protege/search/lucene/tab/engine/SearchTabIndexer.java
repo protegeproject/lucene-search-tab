@@ -1,5 +1,6 @@
 package edu.stanford.protege.search.lucene.tab.engine;
 
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
@@ -140,7 +141,8 @@ public class SearchTabIndexer extends AbstractLuceneIndexer {
                         doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, literal.getLiteral(), Store.YES));
                     }
                     else {
-                        doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
+                    	String foo = strip(literal.getLiteral());
+                        doc.add(new TextField(IndexField.ANNOTATION_TEXT, foo, Store.YES));
                     }
                 }
                 else if (value instanceof IRI) {

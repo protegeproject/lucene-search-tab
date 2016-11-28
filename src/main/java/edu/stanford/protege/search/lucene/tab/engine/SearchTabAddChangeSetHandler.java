@@ -51,7 +51,7 @@ public class SearchTabAddChangeSetHandler extends AddChangeSetHandler implements
                     doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, literal.getLiteral(), Store.YES));
                 }
                 else {
-                    doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
+                	doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
                 }
             }
             else if (value instanceof IRI) {
