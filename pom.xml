@@ -43,7 +43,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <protege.version>5.0.1-SNAPSHOT</protege.version>
+        <protege.version>5.1.1-SNAPSHOT</protege.version>
         <lucene.version>1.0.0-SNAPSHOT</lucene.version>
     </properties>
 
