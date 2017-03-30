@@ -1,6 +1,15 @@
 package edu.stanford.protege.csv.export.ui;
 
 import javax.swing.*;
+
+import org.protege.editor.owl.OWLEditorKit;
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLObject;
+import org.semanticweb.owlapi.util.OWLObjectTypeIndexProvider;
+
+import uk.ac.manchester.cs.owl.owlapi.OWLObjectImplWithoutEntityAndAnonCaching;
+
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -11,12 +20,40 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Stanford University
  */
 public class SortedListModel<E> extends AbstractListModel<E> {
-    private SortedSet<E> model = new TreeSet<>();
+	private OWLEditorKit oek;
+    private SortedSet<E> model = new TreeSet<E>(new Comparator<E>() {
+    	
+    	@Override
+		public int compare(E o1, E o2) {
+			OWLObjectTypeIndexProvider typer = new OWLObjectTypeIndexProvider();
+			OWLEntity e1 = (OWLEntity) o1;
+			OWLEntity e2 = (OWLEntity) o2;
+			int t1 = typer.getTypeIndex(e1);
+			int t2 = typer.getTypeIndex(e2);
+			int diff = t1 - t2;
+			if (diff != 0) {
+				return diff;
+			}
+			String s1 = unescape(oek.getModelManager().getRendering(e1)).toUpperCase();
+			String s2 = unescape(oek.getModelManager().getRendering(e2)).toUpperCase();
+			//System.out.println("string s1 " + s1 + " string s2 " + s2 + " : " + s1.compareTo(s2));
+			return s1.compareTo(s2);
+			
+		}});
+		
 
     /**
      * No-arguments constructor
      */
-    public SortedListModel() { }
+    public SortedListModel(OWLEditorKit kit) { oek = kit; }
+    
+    private String unescape(String s) {
+    	if (s.startsWith("'") &&
+    			s.endsWith("'")) {
+    		return s.substring(1, s.length() - 1);
+    	}
+    	return s;
+    }
 
     @Override
     public int getSize() {

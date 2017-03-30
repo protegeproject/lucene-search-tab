@@ -6,7 +6,10 @@ import org.protege.editor.core.ui.util.VerifiedInputEditor;
 import org.protege.editor.owl.OWLEditorKit;
 import org.protege.editor.owl.model.find.OWLEntityFinder;
 import org.protege.editor.owl.ui.renderer.OWLCellRenderer;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
+import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -35,7 +38,7 @@ public class AddPropertyToExportDialogPanel extends JPanel implements VerifiedIn
     private boolean currentlyValid = false;
     private List<OWLEntity> selectedProperties, propertiesToExclude;
     private Map<OWLEntity, List<OWLEntity>> depMap;
-    private SortedListModel<OWLEntity> listModel = new SortedListModel<>();
+    private SortedListModel<OWLEntity> listModel = null;
 
     /**
      * Constructor
@@ -50,6 +53,7 @@ public class AddPropertyToExportDialogPanel extends JPanel implements VerifiedIn
     public AddPropertyToExportDialogPanel(OWLEditorKit editorKit, List<OWLEntity> propertiesToExclude,
     		Map<OWLEntity, List<OWLEntity>> depMap) {
         this.editorKit = checkNotNull(editorKit);
+        listModel = new SortedListModel<>(editorKit);
         this.propertiesToExclude = checkNotNull(propertiesToExclude);
         this.depMap = depMap;
         initUi();
@@ -158,14 +162,30 @@ public class AddPropertyToExportDialogPanel extends JPanel implements VerifiedIn
         }
         OWLEntityFinder finder = editorKit.getModelManager().getOWLEntityFinder();
         List<OWLEntity> output = new ArrayList<>();
-        Set<OWLEntity> entities = finder.getMatchingOWLEntities(toMatch);
+        Set<OWLObjectProperty> entities = finder.getMatchingOWLObjectProperties(toMatch);
         for(OWLEntity e : entities) {
             if (allPropertiesList.contains(e)) {
                 output.add(e);
             }
         }
+        
+        Set<OWLAnnotationProperty> entities2 = finder.getMatchingOWLAnnotationProperties(toMatch);
+        for(OWLEntity e : entities2) {
+            if (allPropertiesList.contains(e)) {
+                output.add(e);
+            }
+        }
+        
+        Set<OWLDataProperty> entities3 = finder.getMatchingOWLDataProperties(toMatch);
+        for(OWLEntity e : entities3) {
+            if (allPropertiesList.contains(e)) {
+                output.add(e);
+            }
+        }
+        
         filteredPropertiesList = new ArrayList<>(output);
-        Collections.sort(filteredPropertiesList);
+        //Collections.sort(filteredPropertiesList);
+        
         listModel.clear();
         listModel.addAll(filteredPropertiesList);
     }

@@ -16,6 +16,7 @@ import org.protege.editor.owl.ui.renderer.OWLCellRenderer;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLProperty;
+import org.semanticweb.owlapi.util.OWLObjectTypeIndexProvider;
 import org.semanticweb.owlapi.util.ProgressMonitor;
 
 import javax.swing.*;
@@ -397,7 +398,24 @@ public class QueryResultsPanel extends JPanel implements Disposable {
             }
         }
         txtFieldFilteredResults = output;
-        Collections.sort(txtFieldFilteredResults);
+        Collections.sort(txtFieldFilteredResults, new Comparator<Object>() {
+
+			@Override
+			public int compare(Object o1, Object o2) {
+				OWLObjectTypeIndexProvider typer = new OWLObjectTypeIndexProvider();
+				OWLEntity e1 = (OWLEntity) o1;
+				OWLEntity e2 = (OWLEntity) o2;
+				int t1 = typer.getTypeIndex(e1);
+				int t2 = typer.getTypeIndex(e2);
+				int diff = t1 - t2;
+				if (diff != 0) {
+					return diff;
+				}
+				String s1 = unescape(editorKit.getModelManager().getRendering(e1)).toUpperCase();
+				String s2 = unescape(editorKit.getModelManager().getRendering(e2)).toUpperCase();
+				//System.out.println("string s1 " + s1 + " string s2 " + s2 + " : " + s1.compareTo(s2));
+				return s1.compareTo(s2);
+			}});
         setListData(txtFieldFilteredResults, true);
     }
 
@@ -463,7 +481,24 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         exportBtn.setEnabled(true);
         answeredQuery = checkNotNull(query);
         List<OWLEntity> list = new ArrayList<>(entities);
-        Collections.sort(list);
+        Collections.sort(list, new Comparator<Object>() {
+
+			@Override
+			public int compare(Object o1, Object o2) {
+				OWLObjectTypeIndexProvider typer = new OWLObjectTypeIndexProvider();
+				OWLEntity e1 = (OWLEntity) o1;
+				OWLEntity e2 = (OWLEntity) o2;
+				int t1 = typer.getTypeIndex(e1);
+				int t2 = typer.getTypeIndex(e2);
+				int diff = t1 - t2;
+				if (diff != 0) {
+					return diff;
+				}
+				String s1 = unescape(editorKit.getModelManager().getRendering(e1)).toUpperCase();
+				String s2 = unescape(editorKit.getModelManager().getRendering(e2)).toUpperCase();
+				//System.out.println("string s1 " + s1 + " string s2 " + s2 + " : " + s1.compareTo(s2));
+				return s1.compareTo(s2);
+			}});
         resultsList = ImmutableList.copyOf(list);
         entityTypesFilteredResults = resultsList;
         txtFieldFilteredResults = resultsList;
@@ -477,6 +512,14 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         	}       	
         }
         
+    }
+    
+    private String unescape(String s) {
+    	if (s.startsWith("'") &&
+    			s.endsWith("'")) {
+    		return s.substring(1, s.length() - 1);
+    	}
+    	return s;
     }
 
     private List<List<OWLEntity>> divideList(List<OWLEntity> list) {

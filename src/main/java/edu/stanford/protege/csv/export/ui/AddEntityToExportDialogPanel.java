@@ -34,7 +34,7 @@ public class AddEntityToExportDialogPanel extends JPanel implements VerifiedInpu
     private List<OWLEntity> allEntitiesList, filteredEntitiesList;
     private boolean currentlyValid = false;
     private List<OWLEntity> selectedEntities, entitiesToExclude;
-    private SortedListModel<OWLEntity> listModel = new SortedListModel<>();
+    private SortedListModel<OWLEntity> listModel = null;
 
     /**
      * Constructor
@@ -44,6 +44,7 @@ public class AddEntityToExportDialogPanel extends JPanel implements VerifiedInpu
      */
     public AddEntityToExportDialogPanel(OWLEditorKit editorKit, List<OWLEntity> entitiesToExclude) {
         this.editorKit = checkNotNull(editorKit);
+        listModel = new SortedListModel<>(editorKit);
         this.entitiesToExclude = checkNotNull(entitiesToExclude);
         initUi();
     }
