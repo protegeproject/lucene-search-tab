@@ -8,6 +8,7 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLObject;
 import org.semanticweb.owlapi.util.OWLObjectTypeIndexProvider;
 
+import edu.stanford.protege.search.lucene.tab.ui.LuceneUiUtils;
 import uk.ac.manchester.cs.owl.owlapi.OWLObjectImplWithoutEntityAndAnonCaching;
 
 import java.util.*;
@@ -34,8 +35,8 @@ public class SortedListModel<E> extends AbstractListModel<E> {
 			if (diff != 0) {
 				return diff;
 			}
-			String s1 = unescape(oek.getModelManager().getRendering(e1)).toUpperCase();
-			String s2 = unescape(oek.getModelManager().getRendering(e2)).toUpperCase();
+			String s1 = LuceneUiUtils.unescape(oek.getModelManager().getRendering(e1)).toUpperCase();
+			String s2 = LuceneUiUtils.unescape(oek.getModelManager().getRendering(e2)).toUpperCase();
 			//System.out.println("string s1 " + s1 + " string s2 " + s2 + " : " + s1.compareTo(s2));
 			return s1.compareTo(s2);
 			
@@ -47,13 +48,6 @@ public class SortedListModel<E> extends AbstractListModel<E> {
      */
     public SortedListModel(OWLEditorKit kit) { oek = kit; }
     
-    private String unescape(String s) {
-    	if (s.startsWith("'") &&
-    			s.endsWith("'")) {
-    		return s.substring(1, s.length() - 1);
-    	}
-    	return s;
-    }
 
     @Override
     public int getSize() {

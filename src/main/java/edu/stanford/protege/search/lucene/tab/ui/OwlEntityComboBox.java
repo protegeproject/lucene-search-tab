@@ -4,6 +4,7 @@ import org.protege.editor.owl.OWLEditorKit;
 import org.protege.editor.owl.model.find.OWLEntityFinder;
 import org.protege.editor.owl.ui.renderer.OWLCellRenderer;
 import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.util.OWLObjectTypeIndexProvider;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -14,6 +15,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -39,12 +41,38 @@ public class OwlEntityComboBox extends JComboBox<OWLEntity> {
      * @param editorKit    OWL Editor Kit
      */
     public OwlEntityComboBox(OWLEditorKit editorKit) {
-        super(new SortedComboBoxModel<>());
+        super(new SortedComboBoxModel<>(new Comparator() {
+        	
+
+			@Override
+			public int compare(Object o1, Object o2) {
+				if ((o1 != null) && (o2 != null)) {
+					OWLObjectTypeIndexProvider typer = new OWLObjectTypeIndexProvider();
+					OWLEntity e1 = (OWLEntity) o1;
+					OWLEntity e2 = (OWLEntity) o2;
+					int t1 = typer.getTypeIndex(e1);
+					int t2 = typer.getTypeIndex(e2);
+					int diff = t1 - t2;
+					if (diff != 0) {
+						return diff;
+					}
+					String s1 = LuceneUiUtils.unescape(editorKit.getModelManager().getRendering(e1)).toUpperCase();
+					String s2 = LuceneUiUtils.unescape(editorKit.getModelManager().getRendering(e2)).toUpperCase();
+					return s1.compareTo(s2);
+				} else {
+					return 0;
+				}
+
+			}
+        	
+        }));
         this.editorKit = checkNotNull(editorKit);
         entityFinder = editorKit.getModelManager().getOWLEntityFinder();
         model = (SortedComboBoxModel<OWLEntity>) getModel();
         initUi();
     }
+    
+    
 
     private void initUi() {
         setEditable(true);

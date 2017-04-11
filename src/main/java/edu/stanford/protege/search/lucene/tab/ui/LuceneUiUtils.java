@@ -91,4 +91,12 @@ public class LuceneUiUtils {
         }
         return Optional.empty();
     }
+    
+    public static String unescape(String s) {
+    	if (s.startsWith("'") &&
+    			s.endsWith("'")) {
+    		return s.substring(1, s.length() - 1);
+    	}
+    	return s;
+    }
 }
