@@ -69,7 +69,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
      * @param editorKit OWL Editor Kit
      */
     public QueryResultsPanel(OWLEditorKit editorKit) {
-        visibilityTimer = new Timer(200, e -> searchProgressBar.setVisible(true));
+        //visibilityTimer = new Timer(200, e -> searchProgressBar.setVisible(true));
         this.editorKit = checkNotNull(editorKit);
         this.editorKit.getModelManager().addListener(activeOntologyChanged);
         initUi();
@@ -103,6 +103,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         searchProgressBar = new JProgressBar();
         searchProgressBar.putClientProperty("JComponent.sizeVariant", "small");
         searchProgressBar.setVisible(false);
+        visibilityTimer = new Timer(200, e -> searchProgressBar.setVisible(true));
         editorKit.getSearchManager().addProgressMonitor(new ProgressMonitor() {
             @Override
             public void setStarted() {
