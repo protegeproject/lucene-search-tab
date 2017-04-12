@@ -67,7 +67,7 @@ public class LuceneUtils {
     }
 
     public static WildcardQuery createLikeQuery(String searchField, String keyword) {
-        return new WildcardQuery(new Term(searchField, "*" + keyword + "*"));
+        return new WildcardQuery(new Term(searchField, "*" + keyword.replaceAll("\\p{P}", "") + "*"));
     }
 
     public static RegexpQuery createRegexQuery(String searchField, String regexPattern) {

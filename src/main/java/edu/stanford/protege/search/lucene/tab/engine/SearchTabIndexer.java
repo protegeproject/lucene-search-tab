@@ -1,6 +1,8 @@
 package edu.stanford.protege.search.lucene.tab.engine;
 
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
@@ -302,6 +304,7 @@ public class SearchTabIndexer extends AbstractLuceneIndexer {
                         .replaceAll("^\"|\"$", "") // remove enclosed quotes
                         .replaceAll("<[^>]+>", " ") // trim XML tags
                         .replaceAll("\\s+", " ") // trim excessive white spaces
+                        .replaceAll("\\p{P}", "") // remove punctuation
                         .trim();
             }
         };
