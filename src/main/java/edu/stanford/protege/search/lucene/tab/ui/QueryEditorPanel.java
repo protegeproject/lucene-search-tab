@@ -36,6 +36,9 @@ public class QueryEditorPanel extends JPanel implements Disposable {
     private TreeSet<Integer> constraints = new TreeSet<>();
     private JPanel queriesPanel;
     private OWLEditorKit editorKit;
+    
+    private String queryInput = "";
+    private QueryType basicQueryType = null;
 
     /**
      * Constructor
@@ -55,7 +58,9 @@ public class QueryEditorPanel extends JPanel implements Disposable {
      * @param allowNestedQueries    true if nested queries should be allowed, false otherwise
      * @param allowNegatedQueries   true if negated queries should be allowed, false otherwise
      */
-    public QueryEditorPanel(OWLEditorKit editorKit, boolean allowNestedQueries, boolean allowNegatedQueries) {
+    public QueryEditorPanel(OWLEditorKit editorKit, boolean allowNestedQueries, boolean allowNegatedQueries,
+    		JButton b) {
+    	this.searchBtn = b;
         this.editorKit = checkNotNull(editorKit);
         this.allowNestedQueries = checkNotNull(allowNestedQueries);
         this.allowNegatedQueries = checkNotNull(allowNegatedQueries);
@@ -108,6 +113,8 @@ public class QueryEditorPanel extends JPanel implements Disposable {
         }
         BasicQuery.Factory queryFactory = new BasicQuery.Factory(new SearchContext(editorKit), searchManager);
         boolean emptyQueries = false;
+        
+        
 
         // build a lucene query object from all the query clauses
         FilteredQuery.Builder builder = new FilteredQuery.Builder();
@@ -115,6 +122,13 @@ public class QueryEditorPanel extends JPanel implements Disposable {
             if(queryPanel.isBasicQuery()) {
                 BasicQuery basicQuery = getBasicQuery((BasicQueryPanel) queryPanel, queryFactory);
                 if(basicQuery != null) {
+                	if (basicQuery.isFullString()) {
+                		queryInput = ((BasicQueryPanel) queryPanel).getInputStringValue();
+                		this.basicQueryType = ((BasicQueryPanel) queryPanel).getSelectedQueryType();
+                	} else {
+                		queryInput = "";
+                		this.basicQueryType = null;
+                	}
                     builder.add(basicQuery);
                 } else {
                     emptyQueries = true;
@@ -172,7 +186,7 @@ public class QueryEditorPanel extends JPanel implements Disposable {
     private void handleResults(FilteredQuery query, Collection<OWLEntity> results) {
         LuceneQueryPanel queryPanel = getLuceneQueryPanel();
         if(queryPanel != null) {
-            queryPanel.getResultsPanel().setResults(query, results);
+            queryPanel.getResultsPanel().setResults(query, results, queryInput, basicQueryType);
             stopBtn.setVisible(false);
             searchBtn.setVisible(true);
         }
@@ -263,17 +277,17 @@ public class QueryEditorPanel extends JPanel implements Disposable {
     }
 
     public void addBasicQuery() {
-        QueryPanel basicQueryPanel = new BasicQueryPanel(editorKit);
+        QueryPanel basicQueryPanel = new BasicQueryPanel(editorKit, searchBtn);
         addQuery(basicQueryPanel);
     }
 
     public void addNestedQuery() {
-        QueryPanel nestedQueryPanel = new NestedQueryPanel(editorKit);
+        QueryPanel nestedQueryPanel = new NestedQueryPanel(editorKit, searchBtn);
         addQuery(nestedQueryPanel);
     }
 
     public void addNegatedQuery() {
-        QueryPanel negatedQueryPanel = new NegatedQueryPanel(editorKit);
+        QueryPanel negatedQueryPanel = new NegatedQueryPanel(editorKit, searchBtn);
         addQuery(negatedQueryPanel);
     }
 
@@ -288,6 +302,7 @@ public class QueryEditorPanel extends JPanel implements Disposable {
         constraints.add(c.gridy);
         queries.add(queryPanel);
         queriesPanel.add(queryPanel, c);
+        //queryPanel.setSearchButton(searchBtn);
         if(!isNested) {
             searchBtn.setEnabled(true);
         }
@@ -371,7 +386,7 @@ public class QueryEditorPanel extends JPanel implements Disposable {
         searchBtn.addActionListener(searchBtnListener);
         searchBtn.setEnabled(false);
         searchPanel.add(searchBtn);
-
+        
         stopBtn = new JButton("Stop Search");
         stopBtn.addActionListener(stopBtnListener);
         stopBtn.setVisible(false);

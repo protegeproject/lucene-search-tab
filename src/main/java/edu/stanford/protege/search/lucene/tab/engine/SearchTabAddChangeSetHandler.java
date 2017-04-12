@@ -51,7 +51,7 @@ public class SearchTabAddChangeSetHandler extends AddChangeSetHandler implements
                     doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, literal.getLiteral(), Store.YES));
                 }
                 else {
-                    doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
+                	doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
                 }
             }
             else if (value instanceof IRI) {
@@ -59,6 +59,34 @@ public class SearchTabAddChangeSetHandler extends AddChangeSetHandler implements
                 doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, iri.toString(), Store.YES));
             }
             documents.add(doc);
+            
+            for (OWLAnnotation ann : axiom.getAnnotations()) {
+            	doc = new Document();
+            	doc.add(new TextField(IndexField.ENTITY_IRI, getIri(entity), Store.YES));
+                doc.add(new TextField(IndexField.DISPLAY_NAME, getDisplayName(entity), Store.YES));
+                
+                doc.add(new StringField(IndexField.ANNOTATION_IRI, getIri(ann.getProperty()), Store.YES));
+                doc.add(new TextField(IndexField.ANNOTATION_DISPLAY_NAME, getDisplayName(ann.getProperty()), Store.YES));
+               
+                value = ann.getValue();
+                if (value instanceof OWLLiteral) {
+                    OWLLiteral literal = (OWLLiteral) value;
+                    if (literal.getDatatype().getIRI().equals(XSDVocabulary.ANY_URI.getIRI())) {
+                        doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, literal.getLiteral(), Store.YES));
+                    }
+                    else {
+                    	doc.add(new TextField(IndexField.ANNOTATION_TEXT, strip(literal.getLiteral()), Store.YES));
+                    }
+                }
+                else if (value instanceof IRI) {
+                    IRI iri = (IRI) value;
+                    doc.add(new StringField(IndexField.ANNOTATION_VALUE_IRI, iri.toString(), Store.YES));
+                }
+                
+                
+                documents.add(doc);
+            	
+            }
         }
     }
 

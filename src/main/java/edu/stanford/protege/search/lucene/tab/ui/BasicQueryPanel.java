@@ -14,6 +14,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.List;
 
 /**
@@ -36,8 +38,9 @@ public class BasicQueryPanel extends QueryPanel {
      *
      * @param editorKit OWL Editor Kit
      */
-    public BasicQueryPanel(OWLEditorKit editorKit) {
+    public BasicQueryPanel(OWLEditorKit editorKit, JButton b) {
         super(editorKit);
+        searchBtn = b;
         this.editorKit.getModelManager().addOntologyChangeListener(ontologyEditingListener);
         initUi();
     }
@@ -60,6 +63,23 @@ public class BasicQueryPanel extends QueryPanel {
         queryTypeComboBox.addActionListener(queryTypeComboBoxListener);
 
         valueTextField = new JTextField();
+        valueTextField.addKeyListener(new KeyListener() {
+
+			@Override
+			public void keyTyped(KeyEvent e) {}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					//System.out.println("Enter me");
+					searchBtn.doClick();
+				}
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {}
+        	
+        });
         valueComboBox = new JComboBox<>(new Boolean[]{true, false});
         value = valueTextField;
 

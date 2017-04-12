@@ -23,6 +23,11 @@ public class LuceneQueryPanel extends JPanel implements Disposable {
     private QueryEditorPanel editorPanel;
     private boolean painted;
     private JSplitPane splitPane;
+    
+    public LuceneQueryPanel(OWLEditorKit editorKit, LuceneTabLayout layout, JButton b) {
+        this.editorKit = checkNotNull(editorKit);
+        initUi(layout, b);
+    }
 
     /**
      * Constructor
@@ -31,13 +36,13 @@ public class LuceneQueryPanel extends JPanel implements Disposable {
      */
     public LuceneQueryPanel(OWLEditorKit editorKit, LuceneTabLayout layout) {
         this.editorKit = checkNotNull(editorKit);
-        initUi(layout);
+        initUi(layout, null);
     }
 
-    private void initUi(LuceneTabLayout layout) {
+    private void initUi(LuceneTabLayout layout, JButton b) {
         setLayout(new BorderLayout());
         editorPanel = new QueryEditorPanel(editorKit);
-        resultsPanel = new QueryResultsPanel(editorKit);
+        resultsPanel = new QueryResultsPanel(editorKit, b);
         if(layout.equals(LuceneTabLayout.VERTICAL)) {
             splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, editorPanel, resultsPanel);
         } else if(layout.equals(LuceneTabLayout.HORIZONTAL)) {

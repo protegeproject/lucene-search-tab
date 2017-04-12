@@ -4,12 +4,19 @@
         <name value="Lucene search" />
         <class value="edu.stanford.protege.search.lucene.tab.engine.SearchTabManager" />
     </extension>
+    
+    <!-- Preferences -->
+    <extension id="ui.preferences.update"
+               point="org.protege.editor.core.application.preferencespanel">
+        <label value="Lucene Search"/>
+        <class value="org.protege.editor.search.lucene.SearchPreferencesPanel"/>
+    </extension>
 
     <!-- Tabs -->
 
     <extension id="LuceneQueryTab"
                point="org.protege.editor.core.application.WorkspaceTab">
-        <label value="Lucene Query"/>
+        <label value="Lucene Search Tab"/>
         <class value="org.protege.editor.owl.ui.OWLWorkspaceViewsTab"/>
         <index value="X"/>
         <editorKitId value="OWLEditorKit"/>
@@ -23,7 +30,7 @@
         <label value="Lucene Query"/>
         <class value="edu.stanford.protege.search.lucene.tab.ui.LuceneQueryView"/>
         <headerColor value="@org.protege.ontologycolor"/>
-        <category value="Query"/>
+        <category value="Lucene Search Tab"/>
     </extension>
 
     <!-- Menus -->
@@ -52,5 +59,13 @@
         <path value="lucene-search-tab.Lucene/SlotB-G"/>
         <editorKitId value="OWLEditorKit"/>
         <class value="edu.stanford.protege.search.lucene.tab.ui.OpenSettingsAction"/>
+    </extension>
+    <extension id="ExportToCsv"
+               point="org.protege.editor.core.application.EditorKitMenuAction">
+        <name value="Export to CSV"/>
+        <class value="edu.stanford.protege.csv.export.ExportAction"/>
+        <toolTip value="Export entities to a CSV file"/>
+        <path value="org.protege.editor.owl.menu.tools/SlotQ-A"/>
+        <editorKitId value="OWLEditorKit"/>
     </extension>
 </plugin>

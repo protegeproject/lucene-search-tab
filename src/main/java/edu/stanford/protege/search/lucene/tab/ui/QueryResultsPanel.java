@@ -3,6 +3,8 @@ package edu.stanford.protege.search.lucene.tab.ui;
 import com.google.common.collect.ImmutableList;
 import edu.stanford.protege.csv.export.ui.ExportDialogPanel;
 import edu.stanford.protege.search.lucene.tab.engine.FilteredQuery;
+import edu.stanford.protege.search.lucene.tab.engine.QueryType;
+
 import org.protege.editor.core.Disposable;
 import org.protege.editor.core.ui.error.ErrorLogPanel;
 import org.protege.editor.core.ui.util.AugmentedJTextField;
@@ -11,8 +13,10 @@ import org.protege.editor.owl.model.event.EventType;
 import org.protege.editor.owl.model.event.OWLModelManagerListener;
 import org.protege.editor.owl.model.find.OWLEntityFinder;
 import org.protege.editor.owl.ui.renderer.OWLCellRenderer;
+import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLProperty;
+import org.semanticweb.owlapi.util.OWLObjectTypeIndexProvider;
 import org.semanticweb.owlapi.util.ProgressMonitor;
 
 import javax.swing.*;
@@ -43,7 +47,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     private List<OWLEntity> classesList = new ArrayList<>(), propertiesList = new ArrayList<>(),
             individualsList = new ArrayList<>(), datatypesList = new ArrayList<>();
     private JCheckBox classes, properties, individuals, datatypes;
-    private AugmentedJTextField filterTextField;
+    public AugmentedJTextField filterTextField;
     private JLabel statusLbl, pageLbl;
     private JButton exportBtn, backBtn, forwardBtn;
     private int currentPage = 0, totalPages;
@@ -51,6 +55,13 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     private Timer visibilityTimer;
     private FilteredQuery answeredQuery;
     private boolean categorisedEntityTypes = false, paged = false;
+    
+    private JButton gotResult = null;
+    
+    public QueryResultsPanel(OWLEditorKit k, JButton b) {
+    	this(k);
+    	gotResult = b;    	
+    }
 
     /**
      * Constructor
@@ -58,7 +69,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
      * @param editorKit OWL Editor Kit
      */
     public QueryResultsPanel(OWLEditorKit editorKit) {
-        visibilityTimer = new Timer(200, e -> searchProgressBar.setVisible(true));
+        //visibilityTimer = new Timer(200, e -> searchProgressBar.setVisible(true));
         this.editorKit = checkNotNull(editorKit);
         this.editorKit.getModelManager().addListener(activeOntologyChanged);
         initUi();
@@ -92,6 +103,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         searchProgressBar = new JProgressBar();
         searchProgressBar.putClientProperty("JComponent.sizeVariant", "small");
         searchProgressBar.setVisible(false);
+        visibilityTimer = new Timer(200, e -> searchProgressBar.setVisible(true));
         editorKit.getSearchManager().addProgressMonitor(new ProgressMonitor() {
             @Override
             public void setStarted() {
@@ -165,17 +177,17 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     private DocumentListener filterTextListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent e) {
-            filterTextField(true);
+            filterTextField(true, false);
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
-            filterTextField(true);
+            filterTextField(true, false);
         }
 
         @Override
         public void changedUpdate(DocumentEvent e) {
-            filterTextField(true);
+            filterTextField(true, false);
         }
     };
 
@@ -227,11 +239,15 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     }
 
     private void selectEntity() {
-        OWLEntity selectedEntity = getSelectedEntity();
-        if (selectedEntity != null) {
-            editorKit.getOWLWorkspace().getOWLSelectionModel().setSelectedEntity(selectedEntity);
-            editorKit.getOWLWorkspace().displayOWLEntity(selectedEntity);
-        }
+    	OWLEntity selectedEntity = getSelectedEntity();
+    	if (selectedEntity != null) {
+    		if (gotResult != null) {
+    			gotResult.doClick();
+    		} else {
+    			editorKit.getOWLWorkspace().getOWLSelectionModel().setSelectedEntity(selectedEntity);
+    			editorKit.getOWLWorkspace().displayOWLEntity(selectedEntity);
+    		}
+    	}
     }
 
     public OWLEntity getSelectedEntity() {
@@ -327,7 +343,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         if(!checkBox.isSelected()) {
             entityTypesFilteredResults.removeAll(bucket);
         } else {
-            filterTextField(false);
+            filterTextField(false, false);
             if(txtFieldFilteredResults != null) {
                 List<OWLEntity> l = new ArrayList<>(bucket);
                 l.retainAll(txtFieldFilteredResults);
@@ -347,7 +363,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
      *
      * @param filterEntityTypes true if this filter should take into account the status of entity type filter checkboxes, false otherwise
      */
-    private void filterTextField(boolean filterEntityTypes) {
+    private void filterTextField(boolean filterEntityTypes, boolean exact) {
         if(resultsList == null || resultsList.isEmpty()) {
             return;
         }
@@ -356,10 +372,24 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         if(toMatch.isEmpty()) {
             output = new ArrayList<>(resultsList);
         } else {
-            OWLEntityFinder finder = editorKit.getModelManager().getOWLEntityFinder();
-            Set<OWLEntity> foundEntities = finder.getMatchingOWLEntities(toMatch);
-            foundEntities.retainAll(resultsList);
-            output = new ArrayList<>(foundEntities);
+        	OWLEntityFinder finder = editorKit.getModelManager().getOWLEntityFinder();
+        	Set<OWLEntity> foundEntities = new HashSet<OWLEntity>();
+        	if (!exact) {
+        		foundEntities = finder.getMatchingOWLEntities(toMatch);
+        	} else {
+        		Set<OWLEntity> ents = finder.getMatchingOWLEntities(toMatch);
+        		for (OWLEntity ent : ents) {
+        			String cs = editorKit.getModelManager().getRendering(ent);
+        			String ucs = LuceneUiUtils.unescape(cs);
+        			if (ucs.toLowerCase().equals(toMatch)) {
+        				foundEntities.add(ent);
+        			}
+        		}		
+
+        	}
+        	
+        	foundEntities.retainAll(resultsList);
+        	output = new ArrayList<>(foundEntities);
         }
         if(filterEntityTypes) {
             if (!classes.isSelected()) {
@@ -376,7 +406,24 @@ public class QueryResultsPanel extends JPanel implements Disposable {
             }
         }
         txtFieldFilteredResults = output;
-        Collections.sort(txtFieldFilteredResults);
+        Collections.sort(txtFieldFilteredResults, new Comparator<Object>() {
+
+			@Override
+			public int compare(Object o1, Object o2) {
+				OWLObjectTypeIndexProvider typer = new OWLObjectTypeIndexProvider();
+				OWLEntity e1 = (OWLEntity) o1;
+				OWLEntity e2 = (OWLEntity) o2;
+				int t1 = typer.getTypeIndex(e1);
+				int t2 = typer.getTypeIndex(e2);
+				int diff = t1 - t2;
+				if (diff != 0) {
+					return diff;
+				}
+				String s1 = unescape(editorKit.getModelManager().getRendering(e1)).toUpperCase();
+				String s2 = unescape(editorKit.getModelManager().getRendering(e2)).toUpperCase();
+				//System.out.println("string s1 " + s1 + " string s2 " + s2 + " : " + s1.compareTo(s2));
+				return s1.compareTo(s2);
+			}});
         setListData(txtFieldFilteredResults, true);
     }
 
@@ -409,7 +456,6 @@ public class QueryResultsPanel extends JPanel implements Disposable {
                 updateStatus(list);
             }
         } else {
-            paged = false;
             results.setListData(list.toArray(new OWLEntity[list.size()]));
             if(filteredList) {
                 updateStatus(list);
@@ -437,17 +483,51 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         }
     }
 
-    public void setResults(FilteredQuery query, Collection<OWLEntity> entities) {
-        filterTextField.setText("");
+    public void setResults(FilteredQuery query, Collection<OWLEntity> entities, String queryInput, QueryType type) {
+        filterTextField.setText(queryInput.toLowerCase());
         setCheckBoxSelection(true);
         exportBtn.setEnabled(true);
         answeredQuery = checkNotNull(query);
         List<OWLEntity> list = new ArrayList<>(entities);
-        Collections.sort(list);
+        Collections.sort(list, new Comparator<Object>() {
+
+			@Override
+			public int compare(Object o1, Object o2) {
+				OWLObjectTypeIndexProvider typer = new OWLObjectTypeIndexProvider();
+				OWLEntity e1 = (OWLEntity) o1;
+				OWLEntity e2 = (OWLEntity) o2;
+				int t1 = typer.getTypeIndex(e1);
+				int t2 = typer.getTypeIndex(e2);
+				int diff = t1 - t2;
+				if (diff != 0) {
+					return diff;
+				}
+				String s1 = unescape(editorKit.getModelManager().getRendering(e1)).toUpperCase();
+				String s2 = unescape(editorKit.getModelManager().getRendering(e2)).toUpperCase();
+				//System.out.println("string s1 " + s1 + " string s2 " + s2 + " : " + s1.compareTo(s2));
+				return s1.compareTo(s2);
+			}});
         resultsList = ImmutableList.copyOf(list);
         entityTypesFilteredResults = resultsList;
         txtFieldFilteredResults = resultsList;
         setListData(resultsList, true);
+        if (type != null) {
+        	if (type.equals(QueryType.EXACT_MATCH_STRING)) {
+        		filterTextField(true, true);
+        		
+        	} else if (type.equals(QueryType.STARTS_WITH_STRING)) {
+        		filterTextField(true, false);        		
+        	}       	
+        }
+        
+    }
+    
+    private String unescape(String s) {
+    	if (s.startsWith("'") &&
+    			s.endsWith("'")) {
+    		return s.substring(1, s.length() - 1);
+    	}
+    	return s;
     }
 
     private List<List<OWLEntity>> divideList(List<OWLEntity> list) {

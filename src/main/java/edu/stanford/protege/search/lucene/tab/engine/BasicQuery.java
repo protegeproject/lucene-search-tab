@@ -1,6 +1,9 @@
 package edu.stanford.protege.search.lucene.tab.engine;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
@@ -25,10 +28,15 @@ import java.util.Set;
  * Date: 28/06/2016
  */
 public abstract class BasicQuery implements SearchTabQuery {
+	
+	private boolean fullString = false;
+	
+	public void setFullString(boolean b) {fullString = b;}
+	public boolean isFullString() {return fullString;}
 
     public abstract Query getLuceneQuery();
 
-    public abstract LuceneSearcher getSearcher();
+    public abstract LuceneSearcher getSearcher(); 
 
     protected Set<Document> evaluate() throws QueryEvaluationException {
         try {
@@ -66,13 +74,14 @@ public abstract class BasicQuery implements SearchTabQuery {
                 }
                 else if (type.equals(QueryType.STARTS_WITH)) {
                     return createStartsWithFilter(property, toLowerCase(searchString));
-                }
+                }                
                 else if (type.equals(QueryType.ENDS_WITH)) {
                     return createEndsWithFilter(property, toLowerCase(searchString));
                 }
                 else if (type.equals(QueryType.EXACT_MATCH)) {
                     return createExactMatchFilter(property, toLowerCase(searchString));
-                }
+                } 
+                
             }
             else if (QueryType.NonValueQueryTypes.contains(type)) {
                 if (type.equals(QueryType.PROPERTY_VALUE_PRESENT)) {
@@ -88,12 +97,25 @@ public abstract class BasicQuery implements SearchTabQuery {
                     return createPropertyRestrictionAbsentFilter(property);
                 }
             }
+            else if (QueryType.FullStringQueryTypes.contains(type)) {
+            	if (type.equals(QueryType.STARTS_WITH_STRING)) {
+                    BasicQuery bq = createStartsWithFilter(property, toLowerCase(searchString));
+                    bq.setFullString(true);
+                    return bq;
+                }            	
+            	else if (type.equals(QueryType.EXACT_MATCH_STRING)) {
+                    BasicQuery bq = createExactMatchFilter(property, toLowerCase(searchString));
+                    bq.setFullString(true);
+                    return bq;
+                }                
+            }
             throw new IllegalArgumentException("Unsupported query type: " + type);
         }
 
         public KeywordQuery createContainsFilter(OWLProperty property, String searchString) {
+        	searchString = searchString.trim();
             if (isPhrase(searchString)) {
-                return new KeywordQuery(createContainsPhraseQuery(property, searchString), searcher,
+                return new KeywordQuery(createContainsPhraseQuery(property, searchString, searcher.getTextAnalyzer()), searcher,
                         String.format("%s contains %s", getDisplayName(property), searchString));
             }
             else {
@@ -113,7 +135,7 @@ public abstract class BasicQuery implements SearchTabQuery {
         }
 
         public KeywordQuery createExactMatchFilter(OWLProperty property, String searchString) {
-            return new KeywordQuery(createExactMatchQuery(property, searchString), searcher,
+            return new KeywordQuery(createExactMatchQuery(property, searchString, searcher.getTextAnalyzer()), searcher,
                     String.format("%s exact match %s", getDisplayName(property), searchString));
         }
 
@@ -159,11 +181,31 @@ public abstract class BasicQuery implements SearchTabQuery {
             return builder.build();
         }
 
-        private static BooleanQuery createContainsPhraseQuery(OWLProperty property, String searchString) {
-            BooleanQuery.Builder builder = new BooleanQuery.Builder();
-            builder.add(LuceneUtils.createTermQuery(IndexField.ANNOTATION_IRI, property.getIRI().toString()), Occur.MUST);
-            builder.add(LuceneUtils.createPhraseQuery(IndexField.ANNOTATION_TEXT, searchString), Occur.MUST);
-            return builder.build();
+        private static BooleanQuery createContainsPhraseQuery(OWLProperty property, String searchString, Analyzer anal) {        	
+
+        	BooleanQuery.Builder builder = new BooleanQuery.Builder();
+        	// split the phrase into words. When a user types in a phrase for the
+        	// value of a basic query there is an implicit conjunction. After splitting the phrase
+        	// each one is parsed to normalize and remove stop words
+        	String[] terms = searchString.split("\\s+");
+        	for (int i = 0; i < terms.length; i++) {
+        		Query qp = null;
+        		try {
+        			QueryParser parser = new QueryParser(IndexField.ANNOTATION_TEXT, anal);
+        			qp = parser.parse(terms[i].replaceAll("\\p{P}", ""));
+        		}
+        		catch (ParseException e) {
+        			qp = LuceneUtils.createTermQuery(IndexField.ANNOTATION_TEXT, ""); // return an empty term query
+        		}
+
+        		if (qp.toString().equals("")) {
+        			// ignore stop words
+        		} else {
+        			builder.add(LuceneUtils.createTermQuery(IndexField.ANNOTATION_IRI, property.getIRI().toString()), Occur.MUST);
+        			builder.add(qp, Occur.MUST);
+        		}
+        	}
+        	return builder.build();
         }
 
         private static BooleanQuery createStartsWithQuery(OWLProperty property, String searchString) {
@@ -180,10 +222,11 @@ public abstract class BasicQuery implements SearchTabQuery {
             return builder.build();
         }
 
-        private static BooleanQuery createExactMatchQuery(OWLProperty property, String searchString) {
+        private static BooleanQuery createExactMatchQuery(OWLProperty property, String searchString, Analyzer anal) {
             BooleanQuery.Builder builder = new BooleanQuery.Builder();
             builder.add(LuceneUtils.createTermQuery(IndexField.ANNOTATION_IRI, property.getIRI().toString()), Occur.MUST);
-            builder.add(LuceneUtils.createPhraseQuery(IndexField.ANNOTATION_TEXT, searchString), Occur.MUST);
+            builder.add(LuceneUtils.createAnalyzedPhraseQuery(IndexField.ANNOTATION_TEXT, searchString,
+            		anal), Occur.MUST);
             return builder.build();
         }
 

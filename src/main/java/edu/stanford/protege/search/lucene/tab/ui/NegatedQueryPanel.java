@@ -21,8 +21,9 @@ public class NegatedQueryPanel extends QueryPanel {
      *
      * @param editorKit OWL Editor Kit
      */
-    public NegatedQueryPanel(OWLEditorKit editorKit) {
+    public NegatedQueryPanel(OWLEditorKit editorKit, JButton b) {
         super(editorKit);
+        searchBtn = b;
         initUi();
     }
 
@@ -40,7 +41,7 @@ public class NegatedQueryPanel extends QueryPanel {
         topPanel.add(getCloseButton(), new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
         add(topPanel, BorderLayout.NORTH);
 
-        editorPanel = new QueryEditorPanel(editorKit, true, false);
+        editorPanel = new QueryEditorPanel(editorKit, true, false, searchBtn);
         add(editorPanel, BorderLayout.CENTER);
     }
 

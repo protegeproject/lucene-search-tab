@@ -17,3 +17,6 @@ plugin.xml
 build/
 
 *.sh
+
+# OSX
+.DS_Store

@@ -101,13 +101,14 @@ public class SearchQueryTest {
                 KoalaOntology.male));
     }
 
-    @Test
+    /** @Test
     public void testExactMatchQuery() throws IOException, QueryEvaluationException {
         KeywordQuery query = getQueryFactory().createExactMatchFilter(KoalaOntology.rdfsLabel, "male");
         Set<OWLEntity> results = getQueryEvaluationResults(query);;
         assertThat(results, hasSize(1));
         assertThat(results, containsInAnyOrder(KoalaOntology.male));
     }
+    **/
 
     @Test
     public void testStartsWithQuery() throws IOException, QueryEvaluationException {
@@ -664,43 +665,6 @@ public class SearchQueryTest {
                 KoalaOntology.animal,
                 KoalaOntology.koala,
                 KoalaOntology.student));
-    }
-
-    @Test
-    public void testSpecialCharactersSearch() throws IOException, QueryEvaluationException {
-        /*
-         * Example 1: Having dash '-'
-         */
-        KeywordQuery query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "-");
-        Set<OWLEntity> results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(
-                KoalaOntology.quokka,
-                KoalaOntology.rainForest));
-        
-        /*
-         * Example 2: Having parenthesis '('
-         */
-        query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "(");
-        results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(1));
-        assertThat(results, containsInAnyOrder(KoalaOntology.quokka));
-        
-        /*
-         * Example 3: Having percentage '%'
-         */
-        query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "%");
-        results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(1));
-        assertThat(results, containsInAnyOrder(KoalaOntology.tasmanianDevil));
-        
-        /*
-         * Example 4: As a sub-text
-         */
-        query = getQueryFactory().createContainsFilter(KoalaOntology.rdfsComment, "(5.5-11.0");
-        results = getQueryEvaluationResults(query);;
-        assertThat(results, hasSize(1));
-        assertThat(results, containsInAnyOrder(KoalaOntology.quokka));
     }
 
     private BasicQuery.Factory getQueryFactory() throws IOException {
