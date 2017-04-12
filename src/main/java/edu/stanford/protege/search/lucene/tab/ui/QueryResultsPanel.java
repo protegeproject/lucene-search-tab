@@ -376,10 +376,17 @@ public class QueryResultsPanel extends JPanel implements Disposable {
         	if (!exact) {
         		foundEntities = finder.getMatchingOWLEntities(toMatch);
         	} else {
-        		OWLClass cls = finder.getOWLClass(toMatch);
-        		foundEntities.add(cls);
+        		Set<OWLEntity> ents = finder.getMatchingOWLEntities(toMatch);
+        		for (OWLEntity ent : ents) {
+        			String cs = editorKit.getModelManager().getRendering(ent);
+        			String ucs = LuceneUiUtils.unescape(cs);
+        			if (ucs.toLowerCase().equals(toMatch)) {
+        				foundEntities.add(ent);
+        			}
+        		}		
 
         	}
+        	
         	foundEntities.retainAll(resultsList);
         	output = new ArrayList<>(foundEntities);
         }
@@ -476,7 +483,7 @@ public class QueryResultsPanel extends JPanel implements Disposable {
     }
 
     public void setResults(FilteredQuery query, Collection<OWLEntity> entities, String queryInput, QueryType type) {
-        filterTextField.setText(queryInput);
+        filterTextField.setText(queryInput.toLowerCase());
         setCheckBoxSelection(true);
         exportBtn.setEnabled(true);
         answeredQuery = checkNotNull(query);

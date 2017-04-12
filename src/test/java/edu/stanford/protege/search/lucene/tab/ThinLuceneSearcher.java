@@ -1,5 +1,6 @@
 package edu.stanford.protege.search.lucene.tab;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.search.IndexSearcher;
 import org.protege.editor.owl.OWLEditorKit;
 import org.protege.editor.owl.model.search.SearchCategory;
@@ -27,7 +28,7 @@ public class ThinLuceneSearcher extends LuceneSearcher {
     public OWLEditorKit getEditorKit() {
         return editorKit;
     }
-
+    
     @Override
     public void initialise() throws Exception {
         // NO-OP

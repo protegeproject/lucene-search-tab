@@ -43,6 +43,16 @@ public class LuceneUtils {
     public static PhraseQuery createPhraseQuery(String searchField, String keyword) {
         return new PhraseQuery(searchField, keyword.split("\\s+"));
     }
+    
+    public static Query createAnalyzedPhraseQuery(String searchField, String keyword, Analyzer anal) {
+    	try {
+            QueryParser parser = new QueryParser(searchField, anal);
+            return parser.parse(keyword);
+        }
+        catch (ParseException e) {
+            return createTermQuery(searchField, ""); // return an empty term query
+        }
+    }
 
     public static TermQuery createTermQuery(String searchField, String keyword) {
         return new TermQuery(new Term(searchField, keyword));
